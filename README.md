@@ -2,370 +2,313 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<title>ゆいきちナビ</title>
+<title>ゆいきちナビ OS UNLEASHED</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<!-- Leaflet -->
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js"></script>
 
 <style>
-/* ==============================
-   基本レイアウト
-============================== */
-html,body{
-  margin:0;
-  padding:0;
-  height:100%;
-  overflow:hidden;
-  font-family:system-ui,-apple-system,BlinkMacSystemFont;
+/* ============================
+   UI / LAYOUT（極限）
+============================ */
+html,body{margin:0;height:100%;overflow:hidden;font-family:system-ui}
+#map{position:fixed;inset:0}
+#topbar{
+  position:fixed;top:0;left:0;right:0;height:52px;
+  background:#111;color:#fff;z-index:2000;
+  display:flex;align-items:center;padding:0 12px
 }
+#title{font-weight:900}
+#menuBtn{margin-right:12px;font-size:22px;cursor:pointer}
 
-/* ==============================
-   マップ
-============================== */
-#map{
-  position:fixed;
-  inset:0;
-  z-index:1;
-  transition:transform .5s ease;
-}
-
-/* 3Dモード */
-.map-3d{
-  transform:
-    perspective(900px)
-    rotateX(45deg)
-    scale(1.15);
-}
-
-/* ==============================
-   サイドバー
-============================== */
 #sidebar{
-  position:fixed;
-  left:0;
-  top:0;
-  width:320px;
-  height:100%;
-  background:#fff;
-  z-index:5;
-  box-shadow:2px 0 12px rgba(0,0,0,.25);
-  padding:12px;
-  overflow:auto;
-  transition:transform .3s;
+  position:fixed;top:52px;left:0;bottom:0;width:360px;
+  background:#fff;z-index:1900;
+  overflow:auto;padding:10px;
+  transform:translateX(-100%);
+  transition:.3s
 }
-#sidebar.closed{transform:translateX(-100%);}
+#sidebar.open{transform:none}
 
-#sidebar h1{
-  margin:0 0 10px;
-  font-size:20px;
-}
-
-/* ==============================
-   UI共通
-============================== */
-label{font-size:12px;}
-input,select{
-  width:100%;
-  padding:6px;
-  margin-bottom:6px;
-}
-button{
-  width:100%;
-  padding:8px;
-  margin-bottom:6px;
-}
-.primary{
-  background:#1976d2;
-  color:#fff;
-  border:none;
-}
-
-/* ==============================
-   メニューボタン
-============================== */
-#menuBtn{
-  position:fixed;
-  top:10px;
-  left:10px;
-  z-index:10;
-  font-size:22px;
-  padding:8px 12px;
-}
-
-/* ==============================
-   ナビUI
-============================== */
-#navUI{
-  position:fixed;
-  bottom:0;
-  width:100%;
+#navHUD{
+  position:fixed;bottom:0;left:0;right:0;
   background:rgba(255,255,255,.95);
-  z-index:6;
-  padding:10px;
-  display:none;
+  z-index:1800;padding:10px;
+  display:none
 }
-#navMain{font-size:18px;font-weight:bold;}
-#navSub{font-size:14px;opacity:.7;}
+#navMain{font-size:18px;font-weight:900}
+#navSub{font-size:14px;opacity:.7}
 
-/* ==============================
-   夜間
-============================== */
-body.night{
-  background:#000;
-}
-body.night #navUI{
-  background:rgba(0,0,0,.8);
-  color:#fff;
+.map-3d{
+  transform:perspective(900px) rotateX(55deg) scale(1.2);
+  transform-origin:center center;
 }
 </style>
 </head>
 
 <body>
 
-<!-- ============================
-     サイドバー
-============================= -->
+<div id="topbar">
+  <div id="menuBtn">≡</div>
+  <div id="title">ゆいきちナビ</div>
+</div>
+
 <div id="sidebar">
-  <h1>ゆいきちナビ</h1>
-
-  <label>出発地</label>
-  <input id="startInput" placeholder="現在地">
-
-  <label>目的地</label>
-  <input id="goalInput" placeholder="東京駅">
-
-  <label>移動モード</label>
+  <h2>検索</h2>
+  <input id="from" placeholder="出発地（現在地）">
+  <input id="to" placeholder="目的地">
   <select id="mode">
     <option value="driving">車</option>
     <option value="cycling">自転車</option>
     <option value="walking">徒歩</option>
   </select>
-
-  <label>ルート色</label>
-  <input type="color" id="routeColor" value="#1976d2">
-
-  <label>マーカー</label>
-  <select id="markerType">
-    <option value="車">車</option>
-    <option value="自転車">自転車</option>
-    <option value="徒歩">徒歩</option>
-  </select>
-
-  <button onclick="searchRoute()">検索</button>
-  <button class="primary" onclick="startNavi()">ナビ開始</button>
-  <button onclick="stopNavi()">停止</button>
-
-  <button onclick="startDummy()">擬似走行</button>
+  <button onclick="buildRoute()">ルート検索</button>
+  <button onclick="startNav()">ナビ開始</button>
+  <button onclick="stopNav()">停止</button>
 </div>
 
-<button id="menuBtn">≡</button>
 <div id="map"></div>
 
-<div id="navUI">
+<div id="navHUD">
   <div id="navMain">案内待機中</div>
   <div id="navSub">---</div>
 </div>
 
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
 <script>
-/* ==============================
-   設定・状態
-============================== */
+/* =========================================================
+   CONFIG（大量）
+========================================================= */
 const CONFIG={
-  rerouteDistance:40,
-  followZoom:18
+  SNAP_DISTANCE:25,         // m
+  REROUTE_DISTANCE:40,      // m
+  STEP_TRIGGER:35,          // m
+  FOLLOW_ZOOM:18,
+  GPS_INTERVAL:1000
 };
 
-let STATE={
-  current:[35.681236,139.767125],
+/* =========================================================
+   STATE MACHINE（ナビの心臓）
+========================================================= */
+const NAV_STATE={
+  IDLE:0,
+  ROUTE_READY:1,
+  NAVIGATING:2,
+  REROUTING:3,
+  ARRIVED:4
+};
+
+let App={
+  state:NAV_STATE.IDLE,
+  current:[35.681,139.767],
   goal:null,
-  route:[],
+  routeLine:null,
+  routeCoords:[],
   steps:[],
+  stepIndex:0,
+  snappedIndex:0,
   navigating:false,
-  stepIndex:0
+  lastVoice:"",
+  marker:null
 };
 
-/* ==============================
-   地図初期化
-============================== */
+/* =========================================================
+   MAP INIT
+========================================================= */
 const map=L.map("map",{zoomControl:false})
-  .setView(STATE.current,16);
+  .setView(App.current,16);
 
-const tileDay=L.tileLayer(
-  "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-).addTo(map);
+L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png")
+  .addTo(map);
 
-const tileNight=L.tileLayer(
-  "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-);
-
-/* ==============================
-   マーカー
-============================== */
-let marker=L.marker(STATE.current).addTo(map);
-let routeLine=null;
-
-/* ==============================
+/* =========================================================
    UI
-============================== */
-menuBtn.onclick=()=>sidebar.classList.toggle("closed");
+========================================================= */
+menuBtn.onclick=()=>sidebar.classList.toggle("open");
 
-/* ==============================
-   現在地取得
-============================== */
+/* =========================================================
+   GEOLOCATION
+========================================================= */
 navigator.geolocation.watchPosition(p=>{
-  STATE.current=[p.coords.latitude,p.coords.longitude];
-  marker.setLatLng(STATE.current);
-  if(STATE.navigating) follow();
-});
+  App.current=[p.coords.latitude,p.coords.longitude];
+  updateMarker();
+  if(App.state===NAV_STATE.NAVIGATING){
+    navTick();
+  }
+},{},{enableHighAccuracy:true});
 
-/* ==============================
-   検索（Nominatim）
-============================== */
+/* =========================================================
+   MARKER
+========================================================= */
+function updateMarker(){
+  if(!App.marker){
+    App.marker=L.marker(App.current).addTo(map);
+  }
+  App.marker.setLatLng(App.current);
+}
+
+/* =========================================================
+   GEOCODE
+========================================================= */
 async function geocode(q){
-  const url=
-    "https://nominatim.openstreetmap.org/search"+
-    "?format=json&limit=1&q="+encodeURIComponent(q);
-  const r=await fetch(url,{
-    headers:{ "User-Agent":"yuikichi-navi" }
-  });
+  if(!q||q==="現在地"){
+    return App.current;
+  }
+  const r=await fetch(
+    "https://nominatim.openstreetmap.org/search?format=json&q="+
+    encodeURIComponent(q)
+  );
   const j=await r.json();
-  if(!j[0]) throw "not found";
+  if(!j[0]) throw "NOT FOUND";
   return [Number(j[0].lat),Number(j[0].lon)];
 }
 
-/* ==============================
-   ルート取得（OSRM）
-============================== */
-async function searchRoute(){
-  const mode=modeSel();
-  STATE.goal=await geocode(goalInput.value);
-
-  const start=`${STATE.current[1]},${STATE.current[0]}`;
-  const goal=`${STATE.goal[1]},${STATE.goal[0]}`;
+/* =========================================================
+   ROUTE BUILD（OSRM）
+========================================================= */
+async function buildRoute(){
+  App.goal=await geocode(to.value);
+  const start=`${App.current[1]},${App.current[0]}`;
+  const goal=`${App.goal[1]},${App.goal[0]}`;
+  const profile=mode.value;
 
   const url=
-    `https://router.project-osrm.org/route/v1/${mode}/${start};${goal}`+
-    `?geometries=geojson&steps=true`;
+    `https://router.project-osrm.org/route/v1/${profile}/${start};${goal}`+
+    `?overview=full&steps=true&geometries=geojson`;
 
   const r=await fetch(url);
   const j=await r.json();
 
-  STATE.route=j.routes[0].geometry.coordinates
-    .map(c=>[c[1],c[0]]);
-  STATE.steps=j.routes[0].legs[0].steps;
+  App.routeCoords=j.routes[0].geometry.coordinates.map(c=>[c[1],c[0]]);
+  App.steps=j.routes[0].legs[0].steps;
+  App.stepIndex=0;
 
-  if(routeLine) map.removeLayer(routeLine);
-  routeLine=L.polyline(
-    STATE.route,
-    {color:routeColor.value,weight:6}
-  ).addTo(map);
+  if(App.routeLine) map.removeLayer(App.routeLine);
+  App.routeLine=L.polyline(App.routeCoords,{color:"#1e90ff",weight:8})
+    .addTo(map);
 
-  speak("ルートを検索しました");
+  App.state=NAV_STATE.ROUTE_READY;
+  speak("ルートを作成しました");
 }
 
-/* ==============================
-   ナビ開始
-============================== */
-function startNavi(){
-  STATE.navigating=true;
-  sidebar.classList.add("closed");
-  navUI.style.display="block";
+/* =========================================================
+   NAV START / STOP
+========================================================= */
+function startNav(){
+  if(App.state!==NAV_STATE.ROUTE_READY) return;
+  App.state=NAV_STATE.NAVIGATING;
+  navHUD.style.display="block";
   map.getContainer().classList.add("map-3d");
+  sidebar.classList.remove("open");
   speak("ナビを開始します");
 }
 
-/* ==============================
-   ナビ停止
-============================== */
-function stopNavi(){
-  STATE.navigating=false;
-  navUI.style.display="none";
+function stopNav(){
+  App.state=NAV_STATE.IDLE;
+  navHUD.style.display="none";
   map.getContainer().classList.remove("map-3d");
   speak("ナビを終了します");
 }
 
-/* ==============================
-   追尾・回転
-============================== */
-function follow(){
-  map.setView(STATE.current,CONFIG.followZoom);
-  if(!STATE.route[STATE.stepIndex+1]) return;
+/* =========================================================
+   NAV CORE LOOP（本体）
+========================================================= */
+function navTick(){
+  snapToRoute();
+  updateStep();
+  checkReroute();
+  updateHUD();
+  followAndRotate();
+}
 
-  const a=L.latLng(STATE.current);
-  const b=L.latLng(STATE.route[STATE.stepIndex+1]);
+/* =========================================================
+   SNAP TO ROUTE（最近接点）
+========================================================= */
+function snapToRoute(){
+  let min=Infinity,idx=0;
+  App.routeCoords.forEach((p,i)=>{
+    const d=L.latLng(App.current).distanceTo(p);
+    if(d<min){min=d;idx=i}
+  });
+  App.snappedIndex=idx;
+}
 
-  const angle=
-    Math.atan2(b.lng-a.lng,b.lat-a.lat)*180/Math.PI;
+/* =========================================================
+   STEP PROGRESSION
+========================================================= */
+function updateStep(){
+  if(!App.steps[App.stepIndex]) return;
+  const step=App.steps[App.stepIndex];
+  const target=step.maneuver.location;
+  const d=L.latLng(App.current)
+    .distanceTo([target[1],target[0]]);
+
+  if(d<CONFIG.STEP_TRIGGER){
+    App.stepIndex++;
+    voiceStep();
+  }
+}
+
+/* =========================================================
+   VOICE STEP（交差点音声）
+========================================================= */
+function voiceStep(){
+  const step=App.steps[App.stepIndex];
+  if(!step) return;
+  const text=`${step.maneuver.type} ${step.name||""}`;
+  if(text!==App.lastVoice){
+    speak(text);
+    App.lastVoice=text;
+  }
+}
+
+/* =========================================================
+   REROUTE
+========================================================= */
+function checkReroute(){
+  const d=L.latLng(App.current)
+    .distanceTo(App.routeCoords[App.snappedIndex]);
+  if(d>CONFIG.REROUTE_DISTANCE){
+    App.state=NAV_STATE.REROUTING;
+    speak("ルートを再検索します");
+    buildRoute();
+    App.state=NAV_STATE.NAVIGATING;
+  }
+}
+
+/* =========================================================
+   HUD UPDATE
+========================================================= */
+function updateHUD(){
+  const step=App.steps[App.stepIndex];
+  if(step){
+    navMain.textContent=step.maneuver.type;
+    navSub.textContent=step.name||"";
+  }
+}
+
+/* =========================================================
+   FOLLOW & ROTATE
+========================================================= */
+function followAndRotate(){
+  map.setView(App.current,CONFIG.FOLLOW_ZOOM,{animate:false});
+  const next=App.routeCoords[App.snappedIndex+1];
+  if(!next) return;
+  const a=L.latLng(App.current);
+  const b=L.latLng(next);
+  const angle=Math.atan2(b.lng-a.lng,b.lat-a.lat)*180/Math.PI;
   map.getContainer().style.transform=
     `rotate(${-angle}deg)`;
 }
 
-/* ==============================
-   リルート
-============================== */
-function dist(a,b){
-  return L.latLng(a).distanceTo(b);
-}
-
-setInterval(()=>{
-  if(!STATE.navigating||STATE.route.length===0) return;
-  const d=dist(STATE.current,STATE.route[STATE.stepIndex]);
-  if(d>CONFIG.rerouteDistance){
-    speak("ルートを再検索します");
-    searchRoute();
-  }
-},3000);
-
-/* ==============================
-   音声
-============================== */
+/* =========================================================
+   VOICE
+========================================================= */
 function speak(t){
   const u=new SpeechSynthesisUtterance(t);
   u.lang="ja-JP";
   speechSynthesis.speak(u);
-}
-
-/* ==============================
-   夜間切替
-============================== */
-setInterval(()=>{
-  const h=new Date().getHours();
-  if(h>=18||h<=5){
-    if(!map.hasLayer(tileNight)){
-      map.removeLayer(tileDay);
-      tileNight.addTo(map);
-      document.body.classList.add("night");
-    }
-  }else{
-    if(!map.hasLayer(tileDay)){
-      map.removeLayer(tileNight);
-      tileDay.addTo(map);
-      document.body.classList.remove("night");
-    }
-  }
-},60000);
-
-/* ==============================
-   擬似走行
-============================== */
-function startDummy(){
-  let i=0;
-  setInterval(()=>{
-    if(!STATE.route[i]) return;
-    STATE.current=STATE.route[i];
-    marker.setLatLng(STATE.current);
-    i++;
-  },700);
-}
-
-/* ==============================
-   補助
-============================== */
-function modeSel(){
-  return document.getElementById("mode").value;
 }
 </script>
 </body>
