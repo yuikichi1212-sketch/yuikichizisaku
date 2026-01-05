@@ -2,14 +2,13 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<title>ゆいきちナビ 完全版</title>
+<title>ゆいきちナビ</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<!-- Leaflet -->
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 
 <style>
-/* ===== 全体 ===== */
+/* ===== 基本 ===== */
 html, body {
   margin: 0;
   padding: 0;
@@ -23,6 +22,7 @@ html, body {
   position: fixed;
   inset: 0;
   z-index: 1;
+  transition: transform 0.4s ease;
 }
 
 /* ===== サイドバー ===== */
@@ -30,228 +30,257 @@ html, body {
   position: fixed;
   left: 0;
   top: 0;
-  width: 300px;
+  width: 320px;
   height: 100%;
-  background: #ffffff;
+  background: #fff;
   z-index: 5;
-  box-shadow: 2px 0 10px rgba(0,0,0,0.15);
+  box-shadow: 2px 0 10px rgba(0,0,0,.2);
   padding: 12px;
   overflow-y: auto;
-  transition: transform 0.3s;
+  transition: transform .3s;
 }
 
 #sidebar.closed {
   transform: translateX(-100%);
 }
 
-#sidebar h2 {
-  margin: 4px 0 8px;
+#sidebar h1 {
+  margin: 0 0 10px;
+  font-size: 20px;
 }
 
-.sidebar-group {
-  margin-bottom: 12px;
-}
-
-.sidebar-group label {
-  font-size: 12px;
-  display: block;
-}
-
-.sidebar-group input {
+/* ===== 入力 ===== */
+label { font-size: 12px; }
+input, select {
   width: 100%;
   padding: 6px;
+  margin-bottom: 6px;
 }
 
 /* ===== ボタン ===== */
 button {
-  padding: 8px;
-  margin: 4px 0;
   width: 100%;
+  padding: 8px;
+  margin-bottom: 6px;
   font-size: 14px;
 }
 
-button.primary {
+.primary {
   background: #1976d2;
-  color: #fff;
+  color: white;
   border: none;
 }
 
-button.warn {
-  background: #d32f2f;
-  color: #fff;
-  border: none;
-}
-
-/* ===== メニューボタン ===== */
+/* ===== メニュー ===== */
 #menuBtn {
   position: fixed;
-  top: 12px;
-  right: 12px;
+  top: 10px;
+  left: 10px;
   z-index: 10;
-  font-size: 22px;
+  font-size: 20px;
   padding: 8px 12px;
 }
 
-/* ===== ナビパネル ===== */
-#navPanel {
+/* ===== ナビUI ===== */
+#navUI {
   position: fixed;
   bottom: 0;
   width: 100%;
-  background: rgba(255,255,255,0.95);
+  background: rgba(255,255,255,.95);
   z-index: 6;
   padding: 10px;
   display: none;
 }
 
-#nextGuide {
+#navMain {
   font-size: 18px;
   font-weight: bold;
 }
 
-#remain {
+#navSub {
   font-size: 14px;
-  opacity: 0.7;
+  opacity: .7;
+}
+
+/* ===== 3D ===== */
+.map-3d {
+  transform: perspective(800px) rotateX(45deg) scale(1.2);
 }
 </style>
 </head>
+
 <body>
 
-<!-- ===== サイドバー ===== -->
-<div id="sidebar" class="open">
-  <h2>ゆいきちナビ</h2>
+<div id="sidebar">
+  <h1>🧭 ゆいきちナビ</h1>
 
-  <div class="sidebar-group">
-    <label>出発地</label>
-    <input id="startInput" placeholder="現在地 / 名古屋駅 / 緯度,経度">
-  </div>
+  <label>出発地</label>
+  <input id="startInput" placeholder="現在地">
 
-  <div class="sidebar-group">
-    <label>目的地</label>
-    <input id="goalInput" placeholder="東京駅 / 緯度,経度">
-  </div>
+  <label>目的地</label>
+  <input id="goalInput" placeholder="東京駅">
 
-  <div class="sidebar-group">
-    <button onclick="searchRoute()">検索</button>
-    <button class="primary" onclick="startNavi()">ナビ開始</button>
-    <button class="warn" onclick="stopNavi()">停止</button>
-  </div>
+  <label>移動モード</label>
+  <select id="mode">
+    <option value="driving">車</option>
+    <option value="cycling">自転車</option>
+    <option value="walking">徒歩</option>
+  </select>
 
-  <div class="sidebar-group">
-    <label><input type="checkbox" checked> 追尾（中央固定）</label>
-    <label><input type="checkbox" checked> コンパス回転</label>
-  </div>
+  <label>ルート色</label>
+  <input type="color" id="routeColor" value="#1976d2">
 
-  <div class="sidebar-group">
-    <button onclick="setDummyLocation()">擬似現在地</button>
-  </div>
+  <label>マーカー</label>
+  <select id="markerType">
+    <option value="car">🚗 車</option>
+    <option value="bike">🚲 自転車</option>
+    <option value="walk">🚶 徒歩</option>
+  </select>
+
+  <button onclick="searchRoute()">検索</button>
+  <button class="primary" onclick="startNavi()">ナビ開始</button>
+  <button onclick="stopNavi()">停止</button>
+
+  <button onclick="setDummy()">擬似現在地</button>
 </div>
 
-<!-- ===== マップ ===== -->
+<button id="menuBtn">≡</button>
 <div id="map"></div>
 
-<!-- ===== UI ===== -->
-<button id="menuBtn">≡</button>
-
-<div id="navPanel">
-  <div id="nextGuide">案内待機中</div>
-  <div id="remain">---</div>
+<div id="navUI">
+  <div id="navMain">案内待機中</div>
+  <div id="navSub">---</div>
 </div>
 
-<!-- Leaflet -->
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <script>
-/* ================================
+/* ===============================
    初期化
-================================ */
-const map = L.map("map").setView([35.681236, 139.767125], 16);
+=============================== */
+const map = L.map("map", { zoomControl:false })
+  .setView([35.681236,139.767125], 16);
 
-L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-  attribution: "© OpenStreetMap"
-}).addTo(map);
+L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(map);
 
-/* ================================
+let currentPos = [35.681236,139.767125];
+let routeLine, routeCoords = [], stepIndex = 0;
+let navigating = false;
+
+/* ===============================
    マーカー
-================================ */
-let currentMarker = L.marker([35.681236, 139.767125]).addTo(map);
-let routeLine = null;
+=============================== */
+let marker = L.marker(currentPos).addTo(map);
 
-/* ================================
-   サイドバー制御
-================================ */
-const sidebar = document.getElementById("sidebar");
-document.getElementById("menuBtn").onclick = () => {
-  sidebar.classList.toggle("closed");
-};
+/* ===============================
+   サイドバー
+=============================== */
+menuBtn.onclick = () => sidebar.classList.toggle("closed");
 
-/* ================================
+/* ===============================
    現在地
-================================ */
-function updateCurrent(lat, lng) {
-  currentMarker.setLatLng([lat, lng]);
-  map.setView([lat, lng]);
-}
-
-navigator.geolocation.watchPosition(pos => {
-  updateCurrent(pos.coords.latitude, pos.coords.longitude);
+=============================== */
+navigator.geolocation.watchPosition(p=>{
+  currentPos = [p.coords.latitude, p.coords.longitude];
+  marker.setLatLng(currentPos);
+  if(navigating) follow();
 });
 
-/* 擬似 */
-function setDummyLocation() {
-  updateCurrent(35.6895, 139.6917);
+/* ===============================
+   ルート取得（OSRM）
+=============================== */
+async function searchRoute() {
+  const mode = document.getElementById("mode").value;
+  const color = document.getElementById("routeColor").value;
+
+  const start = `${currentPos[1]},${currentPos[0]}`;
+  const goal = "139.767125,35.681236";
+
+  const url = `https://router.project-osrm.org/route/v1/${mode}/${start};${goal}?geometries=geojson&steps=true`;
+
+  const res = await fetch(url);
+  const data = await res.json();
+
+  routeCoords = data.routes[0].geometry.coordinates.map(c=>[c[1],c[0]]);
+
+  if(routeLine) map.removeLayer(routeLine);
+  routeLine = L.polyline(routeCoords,{color,weight:6}).addTo(map);
+
+  stepIndex = 0;
 }
 
-/* ================================
-   検索（ダミー）
-================================ */
-function searchRoute() {
-  if (routeLine) map.removeLayer(routeLine);
-
-  routeLine = L.polyline([
-    currentMarker.getLatLng(),
-    [35.685, 139.76],
-    [35.681236, 139.767125]
-  ], {color:"blue"}).addTo(map);
-
-  document.getElementById("remain").textContent = "距離: 1.2km / 5分";
-}
-
-/* ================================
+/* ===============================
    ナビ
-================================ */
+=============================== */
 function startNavi() {
+  navigating = true;
   sidebar.classList.add("closed");
-  document.getElementById("navPanel").style.display = "block";
+  navUI.style.display = "block";
+  map.getContainer().classList.add("map-3d");
   speak("ナビを開始します");
-  updateGuide("次は右方向です");
 }
 
 function stopNavi() {
-  sidebar.classList.remove("closed");
-  document.getElementById("navPanel").style.display = "none";
+  navigating = false;
+  navUI.style.display = "none";
+  map.getContainer().classList.remove("map-3d");
   speak("ナビを終了します");
 }
 
-function updateGuide(text) {
-  document.getElementById("nextGuide").textContent = text;
+/* ===============================
+   追尾 & 回転
+=============================== */
+function follow() {
+  map.setView(currentPos);
+  if(routeCoords[stepIndex+1]) {
+    const a = currentPos;
+    const b = routeCoords[stepIndex+1];
+    const angle = Math.atan2(b[1]-a[1],b[0]-a[0])*180/Math.PI;
+    map.getContainer().style.transform =
+      `rotate(${-angle}deg)`;
+  }
 }
 
-/* ================================
-   音声
-================================ */
-function speak(text) {
+/* ===============================
+   リルート検知
+=============================== */
+function distance(a,b){
+  return Math.hypot(a[0]-b[0],a[1]-b[1]);
+}
+
+setInterval(()=>{
+  if(!navigating) return;
+  if(routeCoords.length===0) return;
+
+  const d = distance(currentPos, routeCoords[stepIndex]);
+  if(d > 0.0005) {
+    speak("ルートを再探索します");
+    searchRoute();
+  }
+},3000);
+
+/* ===============================
+   音声案内
+=============================== */
+function speak(text){
   const u = new SpeechSynthesisUtterance(text);
   u.lang = "ja-JP";
   speechSynthesis.speak(u);
 }
 
-/* ================================
-   地図回転（仮）
-================================ */
-function rotateMap(angle) {
-  map.getContainer().style.transform = `rotate(${-angle}deg)`;
+/* ===============================
+   擬似移動
+=============================== */
+function setDummy(){
+  let i = 0;
+  setInterval(()=>{
+    if(routeCoords[i]){
+      currentPos = routeCoords[i];
+      marker.setLatLng(currentPos);
+      i++;
+    }
+  },800);
 }
 </script>
-
 </body>
 </html>
