@@ -2,131 +2,254 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<title>ゆいきちナビ>ゆいきちな>ゆ
+<title>ゆいきちナビ 完全版</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<!-- Leaflet -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+
 <style>
-  body { font-family: sans-serif; }
-  canvas { border: 1px solid #333; }
+/* ===== 全体 ===== */
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  overflow: hidden;
+  font-family: system-ui, sans-serif;
+}
+
+/* ===== マップ ===== */
+#map {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+}
+
+/* ===== サイドバー ===== */
+#sidebar {
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: 300px;
+  height: 100%;
+  background: #ffffff;
+  z-index: 5;
+  box-shadow: 2px 0 10px rgba(0,0,0,0.15);
+  padding: 12px;
+  overflow-y: auto;
+  transition: transform 0.3s;
+}
+
+#sidebar.closed {
+  transform: translateX(-100%);
+}
+
+#sidebar h2 {
+  margin: 4px 0 8px;
+}
+
+.sidebar-group {
+  margin-bottom: 12px;
+}
+
+.sidebar-group label {
+  font-size: 12px;
+  display: block;
+}
+
+.sidebar-group input {
+  width: 100%;
+  padding: 6px;
+}
+
+/* ===== ボタン ===== */
+button {
+  padding: 8px;
+  margin: 4px 0;
+  width: 100%;
+  font-size: 14px;
+}
+
+button.primary {
+  background: #1976d2;
+  color: #fff;
+  border: none;
+}
+
+button.warn {
+  background: #d32f2f;
+  color: #fff;
+  border: none;
+}
+
+/* ===== メニューボタン ===== */
+#menuBtn {
+  position: fixed;
+  top: 12px;
+  right: 12px;
+  z-index: 10;
+  font-size: 22px;
+  padding: 8px 12px;
+}
+
+/* ===== ナビパネル ===== */
+#navPanel {
+  position: fixed;
+  bottom: 0;
+  width: 100%;
+  background: rgba(255,255,255,0.95);
+  z-index: 6;
+  padding: 10px;
+  display: none;
+}
+
+#nextGuide {
+  font-size: 18px;
+  font-weight: bold;
+}
+
+#remain {
+  font-size: 14px;
+  opacity: 0.7;
+}
 </style>
 </head>
 <body>
 
-<h2>ゆいきちナビ>ゆいき>
+<!-- ===== サイドバー ===== -->
+<div id="sidebar" class="open">
+  <h2>ゆいきちナビ</h2>
 
-出発：
-<select id="start"></select>
-目的地：
-<select id="goal"></select>
-<button onclick="navigate()">ナビ開始</button>
+  <div class="sidebar-group">
+    <label>出発地</label>
+    <input id="startInput" placeholder="現在地 / 名古屋駅 / 緯度,経度">
+  </div>
 
-<p id="result"></p>
+  <div class="sidebar-group">
+    <label>目的地</label>
+    <input id="goalInput" placeholder="東京駅 / 緯度,経度">
+  </div>
 
-<canvas id="map" width="600" height="400"></canvas>
+  <div class="sidebar-group">
+    <button onclick="searchRoute()">検索</button>
+    <button class="primary" onclick="startNavi()">ナビ開始</button>
+    <button class="warn" onclick="stopNavi()">停止</button>
+  </div>
+
+  <div class="sidebar-group">
+    <label><input type="checkbox" checked> 追尾（中央固定）</label>
+    <label><input type="checkbox" checked> コンパス回転</label>
+  </div>
+
+  <div class="sidebar-group">
+    <button onclick="setDummyLocation()">擬似現在地</button>
+  </div>
+</div>
+
+<!-- ===== マップ ===== -->
+<div id="map"></div>
+
+<!-- ===== UI ===== -->
+<button id="menuBtn">≡</button>
+
+<div id="navPanel">
+  <div id="nextGuide">案内待機中</div>
+  <div id="remain">---</div>
+</div>
+
+<!-- Leaflet -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <script>
-const canvas = document.getElementById("map");
-const ctx = canvas.getContext("2d");
+/* ================================
+   初期化
+================================ */
+const map = L.map("map").setView([35.681236, 139.767125], 16);
 
-// ===== 地点データ =====
-const nodes = {
-  A: { x: 100, y: 200 },
-  B: { x: 300, y: 100 },
-  C: { x: 500, y: 200 },
-  D: { x: 300, y: 300 }
+L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+  attribution: "© OpenStreetMap"
+}).addTo(map);
+
+/* ================================
+   マーカー
+================================ */
+let currentMarker = L.marker([35.681236, 139.767125]).addTo(map);
+let routeLine = null;
+
+/* ================================
+   サイドバー制御
+================================ */
+const sidebar = document.getElementById("sidebar");
+document.getElementById("menuBtn").onclick = () => {
+  sidebar.classList.toggle("closed");
 };
 
-// ===== 道データ =====
-const edges = {
-  A: [{to:"B", cost:2}, {to:"D", cost:4}],
-  B: [{to:"A", cost:2}, {to:"C", cost:3}],
-  C: [{to:"B", cost:3}, {to:"D", cost:1}],
-  D: [{to:"A", cost:4}, {to:"C", cost:1}]
-};
-
-// セレクト初期化
-for (let k in nodes) {
-  start.innerHTML += `<option>${k}</option>`;
-  goal.innerHTML += `<option>${k}</option>`;
+/* ================================
+   現在地
+================================ */
+function updateCurrent(lat, lng) {
+  currentMarker.setLatLng([lat, lng]);
+  map.setView([lat, lng]);
 }
 
-// ===== 地図描画 =====
-function draw(path=[]) {
-  ctx.clearRect(0,0,600,400);
+navigator.geolocation.watchPosition(pos => {
+  updateCurrent(pos.coords.latitude, pos.coords.longitude);
+});
 
-  // 道
-  for (let from in edges) {
-    edges[from].forEach(e=>{
-      ctx.beginPath();
-      ctx.moveTo(nodes[from].x, nodes[from].y);
-      ctx.lineTo(nodes[e.to].x, nodes[e.to].y);
-      ctx.strokeStyle = "#aaa";
-      ctx.stroke();
-    });
-  }
-
-  // ルート
-  if (path.length > 0) {
-    ctx.beginPath();
-    ctx.moveTo(nodes[path[0]].x, nodes[path[0]].y);
-    path.forEach(p=>{
-      ctx.lineTo(nodes[p].x, nodes[p].y);
-    });
-    ctx.strokeStyle = "red";
-    ctx.lineWidth = 4;
-    ctx.stroke();
-    ctx.lineWidth = 1;
-  }
-
-  // 地点
-  for (let k in nodes) {
-    ctx.beginPath();
-    ctx.arc(nodes[k].x, nodes[k].y, 8, 0, Math.PI*2);
-    ctx.fill();
-    ctx.fillText(k, nodes[k].x+10, nodes[k].y);
-  }
+/* 擬似 */
+function setDummyLocation() {
+  updateCurrent(35.6895, 139.6917);
 }
 
-draw();
+/* ================================
+   検索（ダミー）
+================================ */
+function searchRoute() {
+  if (routeLine) map.removeLayer(routeLine);
 
-// ===== ダイクストラ =====
-function dijkstra(start, goal) {
-  const dist = {};
-  const prev = {};
-  const q = new Set(Object.keys(nodes));
+  routeLine = L.polyline([
+    currentMarker.getLatLng(),
+    [35.685, 139.76],
+    [35.681236, 139.767125]
+  ], {color:"blue"}).addTo(map);
 
-  for (let k in nodes) dist[k] = Infinity;
-  dist[start] = 0;
-
-  while (q.size) {
-    let u = [...q].reduce((a,b)=>dist[a]<dist[b]?a:b);
-    q.delete(u);
-
-    if (u === goal) break;
-
-    edges[u].forEach(e=>{
-      let alt = dist[u] + e.cost;
-      if (alt < dist[e.to]) {
-        dist[e.to] = alt;
-        prev[e.to] = u;
-      }
-    });
-  }
-
-  let path = [];
-  let u = goal;
-  while (u) {
-    path.unshift(u);
-    u = prev[u];
-  }
-  return path;
+  document.getElementById("remain").textContent = "距離: 1.2km / 5分";
 }
 
-// ===== ナビ開始 =====
-function navigate() {
-  const s = start.value;
-  const g = goal.value;
-  const path = dijkstra(s, g);
-  draw(path);
-  result.textContent = "ルート：" + path.join(" → ");
+/* ================================
+   ナビ
+================================ */
+function startNavi() {
+  sidebar.classList.add("closed");
+  document.getElementById("navPanel").style.display = "block";
+  speak("ナビを開始します");
+  updateGuide("次は右方向です");
+}
+
+function stopNavi() {
+  sidebar.classList.remove("closed");
+  document.getElementById("navPanel").style.display = "none";
+  speak("ナビを終了します");
+}
+
+function updateGuide(text) {
+  document.getElementById("nextGuide").textContent = text;
+}
+
+/* ================================
+   音声
+================================ */
+function speak(text) {
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = "ja-JP";
+  speechSynthesis.speak(u);
+}
+
+/* ================================
+   地図回転（仮）
+================================ */
+function rotateMap(angle) {
+  map.getContainer().style.transform = `rotate(${-angle}deg)`;
 }
 </script>
 
