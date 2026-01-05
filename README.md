@@ -3,221 +3,282 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>ゆいきちナビ</title>
+    <title>YUIKICHI NAVI PROFESSIONAL</title>
+    
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
     <style>
-        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #1a1a1a; font-family: sans-serif; }
+        /* --- 全体レイアウト --- */
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #111; font-family: "Helvetica Neue", Arial, sans-serif; }
         
-        /* 地図の回転用コンテナ */
-        #map-container { width: 100%; height: 100%; transition: transform 0.1s linear; }
-        #map { width: 100%; height: 100%; }
+        #map-wrapper { position: relative; width: 100%; height: 100%; }
+        #map { width: 100%; height: 100%; z-index: 1; }
 
-        /* 収納メニュー */
-        #menu {
+        /* --- 収納メニュー (ドロワー) --- */
+        #side-drawer {
             position: fixed; top: 0; left: -320px; width: 300px; height: 100%;
-            background: #fff; z-index: 2000; transition: 0.3s; padding: 20px;
-            box-shadow: 2px 0 10px rgba(0,0,0,0.3); display: flex; flex-direction: column;
+            background: #ffffff; z-index: 2000; transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            box-shadow: 5px 0 25px rgba(0,0,0,0.4); display: flex; flex-direction: column;
+            border-right: 1px solid #ddd;
         }
-        #menu.open { left: 0; }
-        #toggle { position: fixed; top: 15px; left: 15px; z-index: 2100; padding: 10px 15px; background: #000; color: #fff; border: none; border-radius: 4px; cursor: pointer; }
+        #side-drawer.is-open { transform: translateX(320px); }
 
-        /* フォーム入力 */
-        .field { margin-bottom: 15px; }
-        label { display: block; font-size: 11px; color: #666; font-weight: bold; margin-bottom: 5px; }
-        input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
-        .btn-current { font-size: 11px; background: #eee; border: none; padding: 5px; margin-top: 5px; width: 100%; cursor: pointer; }
+        /* メニュー内要素 */
+        .drawer-header { background: #000; color: #fff; padding: 20px; font-size: 18px; font-weight: bold; letter-spacing: 2px; }
+        .drawer-content { padding: 20px; overflow-y: auto; flex-grow: 1; }
 
-        /* モード切替 */
-        .modes { display: flex; gap: 5px; margin: 15px 0; }
-        .mode-btn { flex: 1; padding: 10px; background: #eee; border: none; border-radius: 4px; font-size: 12px; cursor: pointer; }
-        .mode-btn.active { background: #000; color: #fff; }
+        /* 入力フォーム */
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; font-size: 10px; color: #999; text-transform: uppercase; margin-bottom: 5px; font-weight: bold; }
+        .form-group input { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 2px; box-sizing: border-box; font-size: 14px; background: #fdfdfd; }
+        .current-loc-link { display: inline-block; margin-top: 5px; font-size: 11px; color: #0066cc; cursor: pointer; text-decoration: underline; }
 
-        /* ナビ情報 */
-        #info-panel {
-            position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
-            width: 90%; background: #fff; z-index: 1000; border-radius: 8px;
-            padding: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); display: none;
+        /* モード選択（車・自転車・歩） */
+        .transport-modes { display: flex; border: 1px solid #000; border-radius: 2px; overflow: hidden; margin-bottom: 25px; }
+        .mode-option { flex: 1; padding: 10px; text-align: center; font-size: 12px; cursor: pointer; background: #fff; transition: 0.2s; }
+        .mode-option:not(:last-child) { border-right: 1px solid #000; }
+        .mode-option.is-active { background: #000; color: #fff; }
+
+        /* ナビ開始ボタン */
+        .btn-primary { width: 100%; padding: 16px; background: #000; color: #fff; border: none; font-size: 15px; font-weight: bold; cursor: pointer; letter-spacing: 1px; }
+
+        /* --- 地図上の操作系 --- */
+        #menu-trigger { position: fixed; top: 20px; left: 20px; z-index: 2100; padding: 12px 20px; background: #000; color: #fff; border: none; font-size: 12px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+
+        /* ナビゲーション表示パネル (下部) */
+        #nav-guide-panel {
+            position: fixed; bottom: 0; left: 0; right: 0; background: #fff; z-index: 1500;
+            padding: 20px; transform: translateY(100%); transition: transform 0.4s;
+            box-shadow: 0 -5px 20px rgba(0,0,0,0.2); display: flex; flex-direction: column; gap: 10px;
         }
-        .info-row { display: flex; justify-content: space-between; align-items: center; }
-        .main-inst { font-size: 18px; font-weight: bold; }
+        #nav-guide-panel.is-visible { transform: translateY(0); }
+        .instruction-box { font-size: 20px; font-weight: bold; color: #000; line-height: 1.2; }
+        .metrics-row { display: flex; justify-content: space-between; font-size: 14px; color: #666; border-top: 1px solid #eee; pt: 10px; }
+        .btn-abort { background: #d00; color: #fff; border: none; padding: 8px 15px; font-size: 12px; border-radius: 2px; font-weight: bold; }
 
-        .user-icon { width: 0; height: 0; border-left: 10px solid transparent; border-right: 10px solid transparent; border-bottom: 20px solid #007bff; }
+        /* 自車マーカー */
+        .user-loc-arrow {
+            width: 0; height: 0; border-left: 10px solid transparent; border-right: 10px solid transparent; border-bottom: 25px solid #0055ff;
+            filter: drop-shadow(0 0 4px rgba(0,0,0,0.5));
+        }
     </style>
 </head>
 <body>
 
-<button id="toggle" onclick="toggleMenu()">MENU</button>
+    <button id="menu-trigger" onclick="toggleDrawer()">MENU</button>
 
-<div id="menu">
-    <h2 style="border-bottom: 2px solid #000; padding-bottom: 5px;">YUIKICHI NAVI</h2>
-    
-    <div class="field">
-        <label>START</label>
-        <input type="text" id="start-in" placeholder="出発地を入力">
-        <button class="btn-current" onclick="setCurrentToStart()">現在地を出発地にする</button>
+    <div id="side-drawer">
+        <div class="drawer-header">YUIKICHI NAVI</div>
+        <div class="drawer-content">
+            <div class="form-group">
+                <label>Origin</label>
+                <input type="text" id="origin-input" placeholder="Enter starting point">
+                <span class="current-loc-link" onclick="setOriginToCurrent()">Use current location</span>
+            </div>
+            <div class="form-group">
+                <label>Destination</label>
+                <input type="text" id="destination-input" placeholder="Enter destination">
+            </div>
+
+            <label style="font-size: 10px; color: #999; font-weight: bold;">Transport Mode</label>
+            <div class="transport-modes">
+                <div class="mode-option is-active" id="m-car" onclick="updateMode('car')">CAR</div>
+                <div class="mode-option" id="m-bike" onclick="updateMode('bicycle')">BIKE</div>
+                <div class="mode-option" id="m-walk" onclick="updateMode('foot')">WALK</div>
+            </div>
+
+            <button class="btn-primary" onclick="initiateNavigation()">START NAVIGATION</button>
+        </div>
     </div>
-    
-    <div class="field">
-        <label>DESTINATION</label>
-        <input type="text" id="end-in" placeholder="目的地を入力">
+
+    <div id="map-wrapper">
+        <div id="map"></div>
     </div>
 
-    <div class="modes">
-        <button class="mode-btn active" id="car-btn" onclick="setMode('car')">車</button>
-        <button class="mode-btn" id="bike-btn" onclick="setMode('bike')">自転車</button>
-        <button class="mode-btn" id="walk-btn" onclick="setMode('walk')">徒歩</button>
+    <div id="nav-guide-panel">
+        <div id="current-instruction" class="instruction-box">Calculating...</div>
+        <div class="metrics-row">
+            <div>
+                <span id="label-dist">0.0 km</span> | <span id="label-time">0 min</span>
+            </div>
+            <button class="btn-abort" onclick="terminateNavigation()">EXIT</button>
+        </div>
     </div>
 
-    <button style="width:100%; padding:15px; background:#000; color:#fff; border:none; font-weight:bold;" onclick="startNavigation()">ナビ開始</button>
-    <button style="width:100%; padding:10px; background:#fff; color:#666; border:none; margin-top:10px;" onclick="toggleMenu()">閉じる</button>
-</div>
+    <script>
+        /** * GLOBAL VARIABLES
+         */
+        let map, userMarker, routeLine, navWatchId;
+        let currentMode = 'car';
+        let currentPos = null;
+        let destinationPos = null;
+        let routeData = null;
 
-<div id="map-container">
-    <div id="map"></div>
-</div>
+        /**
+         * INITIALIZATION
+         */
+        function initMap() {
+            map = L.map('map', { zoomControl: false }).setView([35.6812, 139.7671], 15);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; OpenStreetMap'
+            }).addTo(map);
 
-<div id="info-panel">
-    <div id="inst" class="main-inst">直進してください</div>
-    <div class="info-row">
-        <span id="dist-time">-- km / -- min</span>
-        <button onclick="stopNavigation()" style="background:#cc0000; color:#fff; border:none; padding:5px 10px; border-radius:4px;">終了</button>
-    </div>
-</div>
-
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script>
-    let map, userMarker, routeLine, watchId;
-    let currentMode = 'car';
-    let userLatLng = null;
-    let targetLatLng = null;
-    let lastRerouteTime = 0;
-
-    // 初期化
-    map = L.map('map', { zoomControl: false }).setView([35.681, 139.767], 14);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-
-    // メニュー開閉
-    function toggleMenu() { document.getElementById('menu').classList.toggle('open'); }
-
-    // 現在地取得
-    function setCurrentToStart() {
-        if (!userLatLng) {
-            map.locate({setView: true});
-            alert("位置情報を取得中です。少々お待ちください。");
-        } else {
-            document.getElementById('start-in').value = "現在地";
-        }
-    }
-
-    function setMode(mode) {
-        currentMode = mode;
-        document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
-        document.getElementById(mode + '-btn').classList.add('active');
-    }
-
-    async function getCoords(query) {
-        if (query === "現在地" && userLatLng) return userLatLng;
-        try {
-            const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`);
-            const data = await res.json();
-            return data.length > 0 ? { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) } : null;
-        } catch (e) { return null; }
-    }
-
-    async function startNavigation() {
-        const startVal = document.getElementById('start-in').value;
-        const endVal = document.getElementById('end-in').value;
-        
-        const start = await getCoords(startVal);
-        const end = await getCoords(endVal);
-
-        if (!start || !end) return alert("場所が見つかりませんでした。");
-
-        targetLatLng = end;
-        toggleMenu();
-        document.getElementById('info-panel').style.display = 'block';
-        
-        speak("ナビゲーションを開始します。");
-        calculateRoute(start, end);
-
-        // GPS追跡
-        if (watchId) navigator.geolocation.clearWatch(watchId);
-        watchId = navigator.geolocation.watchPosition(updateNav, null, {enableHighAccuracy: true});
-    }
-
-    // 経路計算 (OSRM APIを使用 - 道路沿い)
-    async function calculateRoute(s, e) {
-        const profile = currentMode === 'walk' ? 'foot' : currentMode === 'bike' ? 'bicycle' : 'car';
-        const url = `https://router.project-osrm.org/route/v1/${profile}/${s.lng},${s.lat};${e.lng},${e.lat}?overview=full&geometries=geojson&steps=true`;
-        
-        try {
-            const res = await fetch(url);
-            const data = await res.json();
-            if (data.code !== 'Ok') return;
-
-            const route = data.routes[0];
-            const coords = route.geometry.coordinates.map(c => [c[1], c[0]]);
-
-            if (routeLine) map.removeLayer(routeLine);
-            routeLine = L.polyline(coords, {color: '#007bff', weight: 6}).addTo(map);
-
-            const dist = (route.distance / 1000).toFixed(1);
-            const time = Math.round(route.duration / 60);
-            document.getElementById('dist-time').innerText = `${dist} km / ${time} min`;
-            
-            const nextStep = route.legs[0].steps[0].maneuver.instruction;
-            document.getElementById('inst').innerText = nextStep;
-        } catch (err) { console.error("Route Error"); }
-    }
-
-    function updateNav(pos) {
-        const latlng = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-        userLatLng = latlng;
-
-        // 自車位置
-        if (!userMarker) {
-            userMarker = L.marker(latlng, { icon: L.divIcon({className: 'user-icon'}) }).addTo(map);
-        } else {
-            userMarker.setLatLng(latlng);
+            // 初期位置取得
+            map.locate({setView: true, maxZoom: 15});
+            map.on('locationfound', (e) => { currentPos = e.latlng; updatePositionMarker(e); });
         }
 
-        // 地図回転 (Heading対応)
-        if (pos.coords.heading) {
-            document.getElementById('map-container').style.transform = `rotate(${-pos.coords.heading}deg)`;
-            document.querySelector('.user-icon').style.transform = `rotate(${pos.coords.heading}deg)`;
+        /**
+         * UI CONTROLS
+         */
+        function toggleDrawer() {
+            document.getElementById('side-drawer').classList.toggle('is-open');
         }
 
-        map.panTo(latlng);
+        function updateMode(mode) {
+            currentMode = mode;
+            document.querySelectorAll('.mode-option').forEach(el => el.classList.remove('is-active'));
+            document.getElementById('m-' + (mode === 'bicycle' ? 'bike' : mode === 'foot' ? 'walk' : 'car')).classList.add('is-active');
+        }
 
-        // リルート判定 (経路から50m以上離れたら)
-        if (routeLine && targetLatLng) {
-            const distToPoint = map.distance(latlng, routeLine.getLatLngs()[0]); // 簡易判定
-            const now = Date.now();
-            if (distToPoint > 50 && (now - lastRerouteTime > 10000)) {
-                lastRerouteTime = now;
-                speak("ルートを外れました。リルートします。");
-                calculateRoute(latlng, targetLatLng);
+        function setOriginToCurrent() {
+            if (currentPos) {
+                document.getElementById('origin-input').value = "CURRENT_LOCATION";
+            } else {
+                alert("GPS not ready.");
             }
         }
-    }
 
-    function stopNavigation() {
-        if (watchId) navigator.geolocation.clearWatch(watchId);
-        document.getElementById('info-panel').style.display = 'none';
-        if (routeLine) map.removeLayer(routeLine);
-        speak("ナビゲーションを終了しました。");
-    }
+        /**
+         * CORE NAVIGATION LOGIC
+         */
+        async function initiateNavigation() {
+            const startVal = document.getElementById('origin-input').value;
+            const endVal = document.getElementById('destination-input').value;
 
-    function speak(text) {
-        window.speechSynthesis.cancel();
-        const u = new SpeechSynthesisUtterance(text);
-        u.lang = 'ja-JP';
-        window.speechSynthesis.speak(u);
-    }
+            if (!startVal || !endVal) return alert("Please fill both fields.");
 
-    map.on('locationfound', e => { userLatLng = e.latlng; });
-    map.locate({watch: true});
+            // 1. Geocoding (地点の座標化)
+            const startNode = (startVal === "CURRENT_LOCATION") ? currentPos : await fetchCoords(startVal);
+            const endNode = await fetchCoords(endVal);
 
-</script>
+            if (!startNode || !endNode) return alert("Location not found.");
+
+            destinationPos = endNode;
+            toggleDrawer();
+
+            // 2. 経路計算
+            await requestRoute(startNode, endNode);
+
+            // 3. ナビゲーション開始
+            document.getElementById('nav-guide-panel').classList.add('is-visible');
+            speakVoice("Starting navigation.");
+
+            // 4. GPS追跡
+            if (navWatchId) navigator.geolocation.clearWatch(navWatchId);
+            navWatchId = navigator.geolocation.watchPosition(handleNavUpdate, handleNavError, {
+                enableHighAccuracy: true
+            });
+        }
+
+        async function fetchCoords(query) {
+            try {
+                const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`);
+                const data = await response.json();
+                return data.length > 0 ? { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) } : null;
+            } catch (e) { return null; }
+        }
+
+        async function requestRoute(start, end) {
+            const profile = currentMode; // car, bicycle, foot
+            const url = `https://router.project-osrm.org/route/v1/${profile}/${start.lng},${start.lat};${end.lng},${end.lat}?overview=full&geometries=geojson&steps=true`;
+
+            const res = await fetch(url);
+            const data = await res.json();
+            
+            if (data.code !== 'Ok') return;
+
+            routeData = data.routes[0];
+            const coordinates = routeData.geometry.coordinates.map(c => [c[1], c[0]]);
+
+            if (routeLine) map.removeLayer(routeLine);
+            routeLine = L.polyline(coordinates, {color: '#0055ff', weight: 8, opacity: 0.7}).addTo(map);
+            
+            map.fitBounds(routeLine.getBounds());
+            updateDashboard(routeData);
+        }
+
+        function handleNavUpdate(pos) {
+            const latlng = L.latLng(pos.coords.latitude, pos.coords.longitude);
+            currentPos = latlng;
+
+            // マーカー更新
+            updatePositionMarker({latlng: latlng, heading: pos.coords.heading});
+            
+            // 地図回転（ヘディングアップ）
+            if (pos.coords.heading) {
+                document.getElementById('map').style.transform = `rotate(${-pos.coords.heading}deg)`;
+            }
+            map.panTo(latlng);
+
+            // リルート判定（経路から離れすぎた場合）
+            checkReroute(latlng);
+        }
+
+        function updatePositionMarker(e) {
+            if (!userMarker) {
+                const arrow = L.divIcon({ className: 'user-loc-arrow', iconSize: [20, 25], iconAnchor: [10, 20] });
+                userMarker = L.marker(e.latlng, {icon: arrow}).addTo(map);
+            } else {
+                userMarker.setLatLng(e.latlng);
+            }
+            if (e.heading) {
+                const el = document.querySelector('.user-loc-arrow');
+                if (el) el.style.transform = `rotate(${e.heading}deg)`;
+            }
+        }
+
+        function updateDashboard(route) {
+            const dist = (route.distance / 1000).toFixed(1);
+            const mins = Math.round(route.duration / 60);
+            document.getElementById('label-dist').innerText = `${dist} km`;
+            document.getElementById('label-time').innerText = `${mins} min`;
+            
+            if (route.legs[0].steps.length > 0) {
+                const nextStep = route.legs[0].steps[0].maneuver.instruction;
+                document.getElementById('current-instruction').innerText = nextStep;
+            }
+        }
+
+        function checkReroute(latlng) {
+            if (!routeLine) return;
+            const points = routeLine.getLatLngs();
+            const distToPath = latlng.distanceTo(points[0]); // 簡易的に始点からの距離
+            
+            if (distToPath > 60) { // 60メートル以上離れた
+                speakVoice("Rerouting.");
+                requestRoute(latlng, destinationPos);
+            }
+        }
+
+        function terminateNavigation() {
+            if (navWatchId) navigator.geolocation.clearWatch(navWatchId);
+            document.getElementById('nav-guide-panel').classList.remove('is-visible');
+            if (routeLine) map.removeLayer(routeLine);
+            speakVoice("Navigation terminated.");
+        }
+
+        function speakVoice(text) {
+            window.speechSynthesis.cancel();
+            const msg = new SpeechSynthesisUtterance(text);
+            msg.lang = 'en-US'; // 日本語にする場合は 'ja-JP'
+            window.speechSynthesis.speak(msg);
+        }
+
+        function handleNavError(err) { console.error("GPS Error: ", err); }
+
+        window.onload = initMap;
+    </script>
 </body>
 </html>
