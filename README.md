@@ -1,196 +1,284 @@
-🏞️ 1. 森林破壊が進む
-紙は木から作られます。紙をたくさん使うほど、多くの木が伐採されます。
-➡ 森が減ると、動物のすみかがなくなり、絶滅する生き物も出てきます。
-➡ 木が減ると、二酸化炭素を吸収する力が弱まり、地球温暖化も進みます。
-💧 2. 水やエネルギーのムダ使い
-紙を作るには、大量の水と電気が必要です。
-➡ 無駄に紙を使うことは、水や電気をムダに使うことにもなります。
-🏭 3. ごみが増えて環境を汚す
-使いすぎた紙は、燃やしたり埋めたりするしかありません。
-➡ 燃やすと二酸化炭素が出て地球温暖化の原因になります。
-➡ 埋めると、土地が汚れたり、ゴミ処理場がいっぱいになったりします。
-💰 4. お金のムダ
-紙を買うのにも印刷するのにもお金がかかります。
-➡ 不要な印刷や配布を減らせば、コストも減らせます。
-🌍 どうすればいいの？
-両面印刷を使う
-必要な分だけ印刷する
-ノートや裏紙を最後まで使う
-デジタル（スマホやパソコン）を活用する
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>ゆいきちナビ</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@700&display=swap" rel="stylesheet">
+    <style>
+        /* UIデザイン - スマホ最適化 */
+        body { margin: 0; padding: 0; font-family: 'M PLUS Rounded 1c', sans-serif; overflow: hidden; background: #eee; }
+        
+        /* ヘッダー */
+        .app-header {
+            position: absolute; top: 0; left: 0; right: 0; height: 60px;
+            background: linear-gradient(135deg, #00b09b, #96c93d);
+            color: white; display: flex; align-items: center; justify-content: center;
+            font-size: 24px; box-shadow: 0 2px 10px rgba(0,0,0,0.2); z-index: 2000;
+        }
 
-紙をつくる工場
-～主にチラシやカタログとなる紙を作る工程を紹介します～
-1-A 木材からパルプをつくる
-せんい
-①繊維を取り出す
-かま
-木材チップを高温高圧の大きな釜
-（蒸解釜・じょうかいがま）に
-入れ、薬品を入れてにこむと、リグニンがとけて繊維はバラバ
-ラになります。
-②あらう
-せんい
-バラバラになった繊維をあらい、リグニン（繊維と繊維をくっ
-つけているもの）やゴミなどをあらい出します。
-ウォッシャー
-チップ
-じょうかいがま
-蒸解釜
-じょうかいがま
-蒸解釜
-こくえき
-黒液はリグニンなどが
-とけた黒い液体だよ。
-黒液は電気などを作る
-ねんりょう
-ための燃料になるよ
-薬品
-バラバラになった
-木材繊維
-リグニンは木の繊維と繊維を
-くっつける「のり」みたいな
-ものだよ。リグニンのおかげ
-てっきん
-で木は鉄筋の柱のように立つ
-ことができるの
-こくえき
-黒液
-リグニンなどを
-洗い流す
-③ゴミを取りのぞく
-せんい
-繊維以外のゴミを取りのぞきます。
-繊維は上へ
-④あらう・白くする
-さらに残ったリグニンを薬品で取りのぞき、白くします。
-最後にあらうと白い木材パルプの完成！
-木材パルプの完成
-漂白装置
-ウォッシャー
-ゴミなどを取り除いた
-木材繊維
-クリーナー
-異物・ゴミは下へ
-砂・金属片・木のくずなど
-1-B 古紙からパルプをつくる
-こし
-①古紙をほぐす
-パルパーとよばれる大きなミキサーに古紙を入れてかきま
-ぜ、おかゆのようにします。
-②ゴミを取りのぞく
-こし
-ほぐした古紙の中に入っているゴミを取りのぞきます。
-繊維は上へ
-パルパー パルパー
-ドロドロの液状に
-なっているパルプ
-古紙とは一度使い
-終わった紙のこと
-を言うよ
-クリーナー
-異物・ゴミは下へ
-③インクを取りのぞく
-こし
-空気を入れて、あわにインクをつけて取りのぞきます。古紙パルプの完成！
-フローテーター
-かいめんかっせいざい
-界面活性剤は、石けんの
-ようなものだよ
-インキのついた泡
-排水処理へ
-界面活性剤
-空気 空気 空気
-さらに白くする場合もあるよ
-2 紙をつくる
-せんい
-①繊維を毛ばだたせる
-機械の中でまわっている2まいのディスクの間に繊維を
-通すことで、繊維が毛ばたちます。そうすると、繊維と
-繊維がくっつきやすいパルプになります。
-リファイナー
-繊維の拡大図
-ディスクを通ると
-繊維が引っかかれて
-毛ばだつんだね
-繊維の拡大図
-③水分をしぼる
-フェルト （毛布）に乗せ、プレスロールではさんで、さらに水分
-をしぼり取ります。
-ぎゅっとしぼられて
-水分は約55%になるよ
-プレスパート
-プレスロール
-プレスロール
-せんい
-②繊維をまんべんなく広げる
-ワイヤー（プラスチックのあみ）の上にパルプをまんべんな
-くふき出して、シートを作ります。
-この時の水分は約99%だよ ワイヤーパートを通る間に、
-水分は約80%になるんだ
-ワイヤーパート
-④熱でかわかす
-じょうき
-蒸気であたためた鉄のつつ（シリンダー）に、しめったシー
-トをおしつけて、かわかします。
-ドライヤーパート
-かわかすことで水分は
-約6～8％までになるんだ！
-⑤下ぬりをする
-きれいに印刷できるように、薬をぬって下地を作ります。
-下地液（サイズ液）
-下地液（サイズ液）
-サイズプレス
-⑦表面をなめらかにする
-かたいロールとやわらかいロールの間に紙を通して、表面
-をなめらかにします。
-カレンダー
-巻き取る
-⑨出荷
-できあがった紙がみなさんの元にとどけられます。
+        #map { position: absolute; top: 60px; bottom: 0; width: 100%; z-index: 1; }
 
+        /* ナビゲーションパネル（下部） */
+        .nav-panel {
+            position: absolute; bottom: 20px; left: 15px; right: 15px;
+            background: rgba(255, 255, 255, 0.95); padding: 20px; border-radius: 20px;
+            box-shadow: 0 -5px 20px rgba(0,0,0,0.15); z-index: 1000;
+            transition: transform 0.3s ease;
+        }
 
-紙の無駄遣いは、地球温暖化や生態系の破壊、水質汚染など、多くの社会問題につながります。紙の生産から廃棄に至るまでのプロセス全体が、環境に大きな負荷をかけているためです。 
-環境への影響
-森林破壊と生物多様性の損失: 紙の原料となるパルプを得るには、大量の樹木を伐採する必要があります。これにより森林が減少し、温室効果ガスの吸収量が低下して地球温暖化を加速させます。また、森林に生息する多くの動植物の住処が奪われ、生態系全体に悪影響を及ぼします。
-水質汚染: 紙の製造工程では、原料を白くするために大量の水と化学薬品が使用されます。この過程で発生する排水には有害物質が含まれており、河川や海に排出されると水質汚染を引き起こします。
-温室効果ガスの排出: 不要になった紙の多くは焼却処分されますが、その際に二酸化炭素が発生し、地球温暖化の原因となります。また、埋め立てられた紙が分解される過程では、強力な温室効果ガスであるメタンガスが発生します。
-資源・エネルギーの大量消費: 紙の製造には、大量の電力や水が消費されます。紙を無駄遣いすることは、これらの貴重な資源やエネルギーの無駄な消費につながります。 
-廃棄物問題
-埋め立て地の逼迫: 世界の埋め立てゴミの約26%を紙類が占めており、紙の無駄遣いは埋め立て地の寿命を縮める大きな要因となります。
-不適切なリサイクル: 正しく分別されずリサイクルできない紙類は、可燃ゴミとして処理されることになります。また、リサイクルの過程で禁忌品（紙以外の異物）が混入すると、再生紙の品質低下や製造機械の故障につながるため、適切な分別が重要です。 
-貧困・社会問題
-資源をめぐる問題: 森林資源が豊富な国々では、紙の原料となる木材の過剰な伐採が、先住民族の居住地や生活に影響を与える可能性があります。
-環境と貧困の連鎖: 環境破壊は、食料不足や住環境の悪化を引き起こし、貧困層の人々をより困難な状況に追い込む可能性があります。 
-対策
-このような問題を解決するためには、ペーパーレス化を進めたり、リサイクル可能な紙は適切に分別したり、FSC認証など、環境に配慮して作られた紙製品を選ぶことが重要です。 
-紙の無駄遣いが引き起こす社会問題は、単なる環境問題にとどまらず、地球全体の生態系、経済活動、そして人々の生活にまで広範な影響を及ぼします。紙の生産から廃棄に至るまでの過程には、以下のような、より深く複雑な問題が潜んでいます。 
-環境への影響
-1. 森林破壊と生物多様性の損失 
-森林減少の加速: 紙の原料となる木材（パルプ）を得るために、世界各地で大規模な森林伐採が行われています。これにより、二酸化炭素の吸収源である森林が減少し、地球温暖化が加速します。
-生態系の破壊: 森林には、多種多様な動植物が生息しており、生物多様性の宝庫です。伐採によって森林が失われると、これらの動植物の生息地が奪われ、生態系全体に深刻なダメージを与えます。
-先住民族への影響: 森林破壊は、そこで生活する先住民族の居住地を奪い、伝統的な生活様式を脅かす人権問題にもつながる可能性があります。 
-2. 水質汚染
-製造工程での汚染水排出: 紙の製造には大量の水と化学薬品が使われます。特に、紙を白くするための漂白工程で発生する排水には有害物質が含まれており、これが河川や海に排出されると、水質汚染の原因となります。
-生物への悪影響: 汚染された水は、水生生物の生態系を破壊し、最終的には人間の健康にも悪影響を及ぼす可能性があります。過去には、パルプ工場の排水が原因で水道水が着臭するなどの問題も報告されています。 
-3. 気候変動の加速
-温室効果ガス排出: 紙の製造には大量のエネルギーが使われ、製造過程で二酸化炭素が発生します。また、不要になった紙の多くは焼却処分されますが、この際にも大量の二酸化炭素が排出されます。
-メタンガス発生: リサイクルされずに埋め立てられた紙は、分解される過程で、二酸化炭素よりも強力な温室効果ガスであるメタンを発生させます。
-再生紙の限界: 再生紙は環境負荷が低いとされますが、製造過程でインクを落とすために化石燃料が使われたり、繊維が劣化するため永遠にリサイクルできるわけではありません。そのため、再生紙であっても過剰な消費は温室効果ガスの排出につながります。 
-資源と廃棄物の問題
-1. 資源とエネルギーの大量消費
-貴重な資源の枯渇: 紙の製造は、木材、水、電力といった貴重な資源を大量に消費します。紙を無駄遣いすることは、これらの資源の無駄な消費に直結します。
-エネルギー問題: 製紙産業は電力消費量が多く、自家発電設備を持つ工場も多いですが、その燃料には石炭や重油といった化石燃料も使われています。紙を使いすぎると、その分だけエネルギー消費が増え、化石燃料への依存度を高めることになります。 
-2. 廃棄物とリサイクルの問題
-埋め立て地の逼迫: 紙は世界の埋め立てゴミの大きな割合を占めており、紙の無駄遣いは埋め立て地の寿命を縮める大きな要因となります。
-リサイクルの課題: 日本では高い古紙回収率を誇るものの、回収された古紙のすべてがリサイクルされているわけではありません。インクや汚れ、紙以外の禁忌品（混ぜてはいけないもの）が混ざると、再生紙の品質が低下したり、製造機械の故障につながったりするため、適切な分別が不可欠です。 
-貧困と社会的格差
-1. 環境と貧困の連鎖
-貧困層への影響: 森林破壊による環境悪化は、水資源の枯渇や食料生産への悪影響を招き、貧困層の人々をさらに困難な状況に追い込む可能性があります。
-持続不可能な生産: 貧しい国々では、経済発展のために紙の原料となる木材の過剰な伐採が進められることがあり、持続可能な開発が妨げられる一因となります。 
-対策と未来に向けた行動
-これらの複雑な問題を解決するためには、個人や企業が意識を変え、具体的な行動を起こすことが求められます。
-ペーパーレス化の推進: 書類のデータ化、電子契約サービスの利用など、紙の使用を抜本的に減らす取り組みは、環境負荷を大きく低減します。
-リサイクルの徹底: 紙のリサイクル率を高めるために、古紙の適切な分別を徹底することが重要です。
-環境配慮型製品の選択: FSC認証など、適切に管理された森林から生産された紙製品を選ぶことは、森林保護への貢献につながります。
-3R（Reduce, Reuse, Recycle）の徹底: 印刷回数を減らす（Reduce）、裏紙をメモとして使う（Reuse）、適切に分別してリサイクルする（Recycle）といった日々の行動を意識することが大切です。 
-紙の無駄遣いをなくすことは、単なる節約ではなく、地球環境と人類の未来を守るための重要な社会的責任なのです。
+        /* 情報表示エリア */
+        .info-grid {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px;
+        }
+        .info-box { text-align: center; background: #f0f2f5; padding: 10px; border-radius: 12px; }
+        .info-value { font-size: 22px; color: #333; }
+        .info-label { font-size: 11px; color: #777; }
+        .large-text { color: #00b09b; }
+
+        /* モード切替ボタン */
+        .mode-selector {
+            display: flex; justify-content: space-around; margin-bottom: 15px;
+            background: #e9ecef; border-radius: 30px; padding: 5px;
+        }
+        .mode-btn {
+            flex: 1; text-align: center; padding: 8px; border-radius: 25px; cursor: pointer; font-size: 14px;
+            transition: all 0.2s; color: #666;
+        }
+        .mode-btn.active { background: #fff; color: #00b09b; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+
+        /* アクションボタン */
+        .action-btn {
+            width: 100%; padding: 15px; border: none; border-radius: 30px;
+            font-size: 18px; font-weight: bold; color: white; cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        }
+        .btn-start { background: #007bff; }
+        .btn-stop { background: #dc3545; display: none; }
+
+        /* カスタムマーカー（自分） */
+        .my-location {
+            width: 0; height: 0;
+            border-left: 12px solid transparent;
+            border-right: 12px solid transparent;
+            border-bottom: 24px solid #007bff;
+            filter: drop-shadow(0 0 5px white);
+            transition: transform 0.5s ease;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="app-header">ゆいきちナビ </div>
+
+    <div id="map"></div>
+
+    <div class="nav-panel">
+        <div class="mode-selector">
+            <div class="mode-btn active" onclick="setMode('car')"> 車</div>
+            <div class="mode-btn" onclick="setMode('bike')"> 自転車</div>
+            <div class="mode-btn" onclick="setMode('walk')"> 徒歩</div>
+        </div>
+
+        <div class="info-grid">
+            <div class="info-box">
+                <div id="dist-val" class="info-value large-text">--</div>
+                <div class="info-label">残り距離 (km)</div>
+            </div>
+            <div class="info-box">
+                <div id="time-val" class="info-value">--</div>
+                <div class="info-label">到着予想 (分)</div>
+            </div>
+            <div class="info-box">
+                <div id="speed-val" class="info-value">0</div>
+                <div class="info-label">速度 (km/h)</div>
+            </div>
+            <div class="info-box">
+                <div id="status-text" class="info-value" style="font-size:14px; line-height:33px;">待機中</div>
+                <div class="info-label">ステータス</div>
+            </div>
+        </div>
+
+        <button id="start-btn" class="action-btn btn-start" onclick="startNav()">ナビを開始する</button>
+        <button id="stop-btn" class="action-btn btn-stop" onclick="stopNav()">ナビを終了する</button>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        // --- 設定値 ---
+        const speeds = { car: 40, bike: 15, walk: 4.8 };
+        let currentMode = 'car';
+        let rerouteThreshold = 0.05; // 50m離れたらリルート判定
+
+        // --- 変数 ---
+        let map, userMarker, destMarker, routeLine, traceLine;
+        let watchId = null;
+        let currentPos = null;      // 現在地 [lat, lng]
+        let destinationPos = null;  // 目的地 [lat, lng]
+        let startPosForRoute = null; // ルート計算の基準点（リルート判定用）
+        let traceCoords = [];       // 軌跡用配列
+
+        // 1. マップ初期化
+        map = L.map('map', { zoomControl: false }).setView([35.6812, 139.7671], 15);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+
+        // 自分アイコン
+        const myIcon = L.divIcon({
+            className: 'my-location',
+            iconSize: [24, 24],
+            iconAnchor: [12, 18]
+        });
+
+        // 2. 目的地設定（タップ）
+        map.on('click', (e) => {
+            if (watchId) return; // ナビ中は変更不可
+            
+            destinationPos = e.latlng;
+            
+            if (destMarker) map.removeLayer(destMarker);
+            destMarker = L.marker(destinationPos).addTo(map).bindPopup("🏁 目的地").openPopup();
+            
+            updateInfoDisplay(0); // 表示更新
+            document.getElementById('status-text').innerText = "準備OK";
+            speak("目的地をセットしました。");
+        });
+
+        // 3. モード切替
+        function setMode(mode) {
+            currentMode = mode;
+            document.querySelectorAll('.mode-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            // 再計算
+            if (destinationPos && currentPos) {
+                const dist = map.distance(currentPos, destinationPos) / 1000;
+                updateInfoDisplay(dist);
+            }
+            speak(mode === 'car' ? "車モード" : mode === 'bike' ? "自転車モード" : "徒歩モード");
+        }
+
+        // 4. ナビ開始
+        function startNav() {
+            if (!destinationPos) {
+                alert("地図をタップして目的地を決めてください！");
+                return;
+            }
+            if (!navigator.geolocation) {
+                alert("GPSが使えません");
+                return;
+            }
+
+            // UI変更
+            document.getElementById('start-btn').style.display = 'none';
+            document.getElementById('stop-btn').style.display = 'block';
+            document.getElementById('status-text').innerText = "ナビ中...";
+
+            speak("ゆいきちナビ、スタートです！安全運転で行きましょう。");
+
+            // GPS追跡開始
+            watchId = navigator.geolocation.watchPosition(
+                onLocationUpdate, 
+                err => console.error(err), 
+                { enableHighAccuracy: true, maximumAge: 0, timeout: 5000 }
+            );
+        }
+
+        // 5. ナビ終了
+        function stopNav() {
+            if (watchId) navigator.geolocation.clearWatch(watchId);
+            watchId = null;
+            document.getElementById('start-btn').style.display = 'block';
+            document.getElementById('stop-btn').style.display = 'none';
+            document.getElementById('status-text').innerText = "終了";
+            traceCoords = []; // 軌跡リセット
+            speak("ナビを終了します。お疲れ様でした。");
+        }
+
+        // 6. メインロジック（位置更新時に呼ばれる）
+        function onLocationUpdate(position) {
+            const { latitude, longitude, heading, speed } = position.coords;
+            currentPos = L.latLng(latitude, longitude);
+
+            // 初回、またはリルート後の基準点設定
+            if (!startPosForRoute) startPosForRoute = currentPos;
+
+            // --- A. マーカー更新 ---
+            if (!userMarker) {
+                userMarker = L.marker(currentPos, {icon: myIcon}).addTo(map);
+            } else {
+                userMarker.setLatLng(currentPos);
+                // ヘディング回転（対応端末のみ）
+                if (heading) {
+                    document.querySelector('.my-location').style.transform = `rotate(${heading}deg)`;
+                }
+            }
+
+            // --- B. 軌跡（足跡）描画 ---
+            traceCoords.push(currentPos);
+            if (traceLine) map.removeLayer(traceLine);
+            traceLine = L.polyline(traceCoords, { color: '#00b09b', weight: 8, opacity: 0.6 }).addTo(map);
+
+            // --- C. ルートラインとリルート判定 ---
+            // 擬似的なリルートロジック：
+            // 現在地から目的地への直線を描くが、もし「本来のライン」から大きく外れたら「リルート」演出を入れる。
+            // ※APIがないため、今回は「常に目的地への直線を更新し続ける」ことで自動補正します。
+            
+            // 前回のルートラインまでの距離を計算（簡易版：スタート地点からの距離が離れたらリルートとみなす演出）
+            // ここではシンプルに「常に最新のルート（青点線）を引き直す」処理にします。
+            if (routeLine) map.removeLayer(routeLine);
+            routeLine = L.polyline([currentPos, destinationPos], { color: '#007bff', weight: 5, dashArray: '10, 15' }).addTo(map);
+
+            // リルート演出判定（あくまで演出です）
+            // もし「目的地までの距離」が、直前の計算より極端に増えた場合などを検知できますが、
+            // 今回はシンプルに「30秒おき」や「特定の条件」でアナウンスを入れる代わりに、
+            // 常に最短（直線）を示す仕様としています。
+
+            // --- D. 情報更新 ---
+            const distMeters = map.distance(currentPos, destinationPos);
+            const distKm = distMeters / 1000;
+            
+            // 速度表示 (m/s -> km/h)
+            const speedKmh = speed ? (speed * 3.6).toFixed(0) : 0;
+            document.getElementById('speed-val').innerText = speedKmh;
+
+            updateInfoDisplay(distKm);
+
+            map.panTo(currentPos); // カメラ追従
+
+            // --- E. 到着判定 ---
+            if (distMeters < 30) {
+                speak("まもなく目的地です。案内を終了します。");
+                stopNav();
+            }
+        }
+
+        // 表示更新用関数
+        function updateInfoDisplay(distKm) {
+            document.getElementById('dist-val').innerText = distKm.toFixed(1);
+            
+            const speed = speeds[currentMode];
+            const timeMin = Math.round((distKm / speed) * 60);
+            document.getElementById('time-val').innerText = timeMin;
+        }
+
+        // リルート（シミュレーション用関数：本来はここでルート再計算APIを叩く）
+        function checkReroute(current, start, end) {
+            // 直線からの乖離距離を計算するのは複雑なため、
+            // 今回は「目的地の方角」が大きく変わった場合にトリガーするなどが考えられます。
+            // このサンプルではシンプルさを優先し、実装を省略しています。
+        }
+
+        // 音声合成
+        function speak(text) {
+            if (!window.speechSynthesis) return;
+            // 読み上げ中の場合はキャンセル
+            window.speechSynthesis.cancel();
+            const uttr = new SpeechSynthesisUtterance(text);
+            uttr.lang = 'ja-JP';
+            uttr.rate = 1.0;
+            window.speechSynthesis.speak(uttr);
+        }
+    </script>
+</body>
+</html>
