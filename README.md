@@ -112,7 +112,7 @@ button {
 <body>
 
 <div id="sidebar">
-  <h1>🧭 ゆいきちナビ</h1>
+  <h1>ゆいきちナビ</h1>
 
   <label>出発地</label>
   <input id="startInput" placeholder="現在地">
@@ -132,9 +132,9 @@ button {
 
   <label>マーカー</label>
   <select id="markerType">
-    <option value="car">🚗 車</option>
-    <option value="bike">🚲 自転車</option>
-    <option value="walk">🚶 徒歩</option>
+    <option value="car">車</option>
+    <option value="bike">自転車</option>
+    <option value="walk">徒歩</option>
   </select>
 
   <button onclick="searchRoute()">検索</button>
