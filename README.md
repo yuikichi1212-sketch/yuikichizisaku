@@ -4,281 +4,221 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>ゆいきちナビ</title>
+    
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css" />
+
     <style>
-        /* UIデザイン - スマホ最適化 */
-        body { margin: 0; padding: 0; font-family: 'M PLUS Rounded 1c', sans-serif; overflow: hidden; background: #eee; }
+        /* --- デザイン定義 (モノクロ・シンプル) --- */
+        body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; overflow: hidden; background: #333; }
         
-        /* ヘッダー */
-        .app-header {
-            position: absolute; top: 0; left: 0; right: 0; height: 60px;
-            background: linear-gradient(135deg, #00b09b, #96c93d);
-            color: white; display: flex; align-items: center; justify-content: center;
-            font-size: 24px; box-shadow: 0 2px 10px rgba(0,0,0,0.2); z-index: 2000;
+        /* 地図本体 */
+        #map { position: absolute; top: 0; bottom: 0; width: 100%; z-index: 1; background: #ddd; transition: transform 0.5s linear; }
+
+        /* ヘッダー (シンプル) */
+        .header {
+            position: absolute; top: 0; left: 0; right: 0; 
+            background: rgba(255, 255, 255, 0.95); padding: 10px; z-index: 1000;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1); display: flex; flex-direction: column; gap: 8px;
+        }
+        .app-title { font-size: 16px; font-weight: bold; color: #333; text-align: center; margin-bottom: 5px; }
+
+        /* 検索フォーム */
+        .search-box { display: flex; gap: 5px; }
+        input { flex: 1; padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; }
+        button { padding: 8px 15px; background: #333; color: #fff; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        button:active { background: #555; }
+
+        /* ナビ情報パネル (下部・コンパクト) */
+        .nav-info {
+            position: absolute; bottom: 20px; left: 10px; right: 10px;
+            background: rgba(255, 255, 255, 0.95); padding: 15px; border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2); z-index: 1000;
+            display: none; /* 最初は非表示 */
+        }
+        .instruction { font-size: 18px; font-weight: bold; color: #000; margin-bottom: 5px; }
+        .details { font-size: 14px; color: #666; display: flex; justify-content: space-between; }
+        
+        /* 自車アイコン */
+        .user-marker {
+            width: 20px; height: 20px; background: #007bff; border: 2px solid #fff;
+            border-radius: 50%; box-shadow: 0 0 5px rgba(0,0,0,0.5);
         }
 
-        #map { position: absolute; top: 60px; bottom: 0; width: 100%; z-index: 1; }
+        /* Leaflet Routing Machineのデフォルト表示を消す */
+        .leaflet-routing-container { display: none !important; }
 
-        /* ナビゲーションパネル（下部） */
-        .nav-panel {
-            position: absolute; bottom: 20px; left: 15px; right: 15px;
-            background: rgba(255, 255, 255, 0.95); padding: 20px; border-radius: 20px;
-            box-shadow: 0 -5px 20px rgba(0,0,0,0.15); z-index: 1000;
-            transition: transform 0.3s ease;
-        }
-
-        /* 情報表示エリア */
-        .info-grid {
-            display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px;
-        }
-        .info-box { text-align: center; background: #f0f2f5; padding: 10px; border-radius: 12px; }
-        .info-value { font-size: 22px; color: #333; }
-        .info-label { font-size: 11px; color: #777; }
-        .large-text { color: #00b09b; }
-
-        /* モード切替ボタン */
-        .mode-selector {
-            display: flex; justify-content: space-around; margin-bottom: 15px;
-            background: #e9ecef; border-radius: 30px; padding: 5px;
-        }
-        .mode-btn {
-            flex: 1; text-align: center; padding: 8px; border-radius: 25px; cursor: pointer; font-size: 14px;
-            transition: all 0.2s; color: #666;
-        }
-        .mode-btn.active { background: #fff; color: #00b09b; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-
-        /* アクションボタン */
-        .action-btn {
-            width: 100%; padding: 15px; border: none; border-radius: 30px;
-            font-size: 18px; font-weight: bold; color: white; cursor: pointer;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
-        }
-        .btn-start { background: #007bff; }
-        .btn-stop { background: #dc3545; display: none; }
-
-        /* カスタムマーカー（自分） */
-        .my-location {
-            width: 0; height: 0;
-            border-left: 12px solid transparent;
-            border-right: 12px solid transparent;
-            border-bottom: 24px solid #007bff;
-            filter: drop-shadow(0 0 5px white);
-            transition: transform 0.5s ease;
+        /* コンパスボタン */
+        .compass-btn {
+            position: absolute; bottom: 100px; right: 10px; width: 40px; height: 40px;
+            background: white; border-radius: 50%; z-index: 1000;
+            display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2); font-size: 20px; cursor: pointer;
         }
     </style>
 </head>
 <body>
 
-    <div class="app-header">ゆいきちナビ </div>
+    <div class="header">
+        <div class="app-title">ゆいきちナビ</div>
+        <div class="search-box">
+            <input type="text" id="start-input" placeholder="出発地 (例: 東京駅)" />
+            <input type="text" id="end-input" placeholder="目的地 (例: スカイツリー)" />
+            <button onclick="searchAndRoute()">検索</button>
+        </div>
+    </div>
 
     <div id="map"></div>
 
-    <div class="nav-panel">
-        <div class="mode-selector">
-            <div class="mode-btn active" onclick="setMode('car')"> 車</div>
-            <div class="mode-btn" onclick="setMode('bike')"> 自転車</div>
-            <div class="mode-btn" onclick="setMode('walk')"> 徒歩</div>
-        </div>
+    <div class="compass-btn" onclick="resetMapRotation()">N</div>
 
-        <div class="info-grid">
-            <div class="info-box">
-                <div id="dist-val" class="info-value large-text">--</div>
-                <div class="info-label">残り距離 (km)</div>
-            </div>
-            <div class="info-box">
-                <div id="time-val" class="info-value">--</div>
-                <div class="info-label">到着予想 (分)</div>
-            </div>
-            <div class="info-box">
-                <div id="speed-val" class="info-value">0</div>
-                <div class="info-label">速度 (km/h)</div>
-            </div>
-            <div class="info-box">
-                <div id="status-text" class="info-value" style="font-size:14px; line-height:33px;">待機中</div>
-                <div class="info-label">ステータス</div>
-            </div>
+    <div id="nav-panel" class="nav-info">
+        <div id="instruction-text" class="instruction">ルートを検索してください</div>
+        <div class="details">
+            <span id="distance-text">-- km</span>
+            <span id="time-text">-- 分</span>
         </div>
-
-        <button id="start-btn" class="action-btn btn-start" onclick="startNav()">ナビを開始する</button>
-        <button id="stop-btn" class="action-btn btn-stop" onclick="stopNav()">ナビを終了する</button>
     </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js"></script>
+
     <script>
-        // --- 設定値 ---
-        const speeds = { car: 40, bike: 15, walk: 4.8 };
-        let currentMode = 'car';
-        let rerouteThreshold = 0.05; // 50m離れたらリルート判定
-
-        // --- 変数 ---
-        let map, userMarker, destMarker, routeLine, traceLine;
+        // --- 変数定義 ---
+        let map;
+        let routingControl = null;
+        let userMarker = null;
         let watchId = null;
-        let currentPos = null;      // 現在地 [lat, lng]
-        let destinationPos = null;  // 目的地 [lat, lng]
-        let startPosForRoute = null; // ルート計算の基準点（リルート判定用）
-        let traceCoords = [];       // 軌跡用配列
+        let currentHeading = 0;
 
-        // 1. マップ初期化
+        // 1. 地図の初期化
         map = L.map('map', { zoomControl: false }).setView([35.6812, 139.7671], 15);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; OpenStreetMap contributors'
+        }).addTo(map);
 
-        // 自分アイコン
-        const myIcon = L.divIcon({
-            className: 'my-location',
-            iconSize: [24, 24],
-            iconAnchor: [12, 18]
-        });
+        // 2. 検索 & ルート計算 (Nominatim + OSRM)
+        async function searchAndRoute() {
+            const startText = document.getElementById('start-input').value;
+            const endText = document.getElementById('end-input').value;
 
-        // 2. 目的地設定（タップ）
-        map.on('click', (e) => {
-            if (watchId) return; // ナビ中は変更不可
-            
-            destinationPos = e.latlng;
-            
-            if (destMarker) map.removeLayer(destMarker);
-            destMarker = L.marker(destinationPos).addTo(map).bindPopup("🏁 目的地").openPopup();
-            
-            updateInfoDisplay(0); // 表示更新
-            document.getElementById('status-text').innerText = "準備OK";
-            speak("目的地をセットしました。");
-        });
-
-        // 3. モード切替
-        function setMode(mode) {
-            currentMode = mode;
-            document.querySelectorAll('.mode-btn').forEach(btn => btn.classList.remove('active'));
-            event.target.classList.add('active');
-            
-            // 再計算
-            if (destinationPos && currentPos) {
-                const dist = map.distance(currentPos, destinationPos) / 1000;
-                updateInfoDisplay(dist);
-            }
-            speak(mode === 'car' ? "車モード" : mode === 'bike' ? "自転車モード" : "徒歩モード");
-        }
-
-        // 4. ナビ開始
-        function startNav() {
-            if (!destinationPos) {
-                alert("地図をタップして目的地を決めてください！");
-                return;
-            }
-            if (!navigator.geolocation) {
-                alert("GPSが使えません");
+            if(!startText || !endText) {
+                alert("出発地と目的地を入力してください");
                 return;
             }
 
-            // UI変更
-            document.getElementById('start-btn').style.display = 'none';
-            document.getElementById('stop-btn').style.display = 'block';
-            document.getElementById('status-text').innerText = "ナビ中...";
+            try {
+                // 住所から座標へ変換 (Geocoding)
+                const startCoords = await getCoords(startText);
+                const endCoords = await getCoords(endText);
 
-            speak("ゆいきちナビ、スタートです！安全運転で行きましょう。");
-
-            // GPS追跡開始
-            watchId = navigator.geolocation.watchPosition(
-                onLocationUpdate, 
-                err => console.error(err), 
-                { enableHighAccuracy: true, maximumAge: 0, timeout: 5000 }
-            );
-        }
-
-        // 5. ナビ終了
-        function stopNav() {
-            if (watchId) navigator.geolocation.clearWatch(watchId);
-            watchId = null;
-            document.getElementById('start-btn').style.display = 'block';
-            document.getElementById('stop-btn').style.display = 'none';
-            document.getElementById('status-text').innerText = "終了";
-            traceCoords = []; // 軌跡リセット
-            speak("ナビを終了します。お疲れ様でした。");
-        }
-
-        // 6. メインロジック（位置更新時に呼ばれる）
-        function onLocationUpdate(position) {
-            const { latitude, longitude, heading, speed } = position.coords;
-            currentPos = L.latLng(latitude, longitude);
-
-            // 初回、またはリルート後の基準点設定
-            if (!startPosForRoute) startPosForRoute = currentPos;
-
-            // --- A. マーカー更新 ---
-            if (!userMarker) {
-                userMarker = L.marker(currentPos, {icon: myIcon}).addTo(map);
-            } else {
-                userMarker.setLatLng(currentPos);
-                // ヘディング回転（対応端末のみ）
-                if (heading) {
-                    document.querySelector('.my-location').style.transform = `rotate(${heading}deg)`;
+                if(!startCoords || !endCoords) {
+                    alert("場所が見つかりませんでした");
+                    return;
                 }
+
+                // 既存のルートがあれば消す
+                if(routingControl) {
+                    map.removeControl(routingControl);
+                }
+
+                // ルート計算エンジンの起動 (道路沿いのルート)
+                routingControl = L.Routing.control({
+                    waypoints: [
+                        L.latLng(startCoords.lat, startCoords.lon),
+                        L.latLng(endCoords.lat, endCoords.lon)
+                    ],
+                    routeWhileDragging: false,
+                    language: 'ja', // 日本語案内
+                    show: false,    // デフォルトのパネルは隠す
+                    createMarker: function() { return null; }, // デフォルトマーカーを消す
+                    lineOptions: {
+                        styles: [{color: '#007bff', opacity: 0.8, weight: 6}]
+                    }
+                }).addTo(map);
+
+                // ルートが見つかった時の処理
+                routingControl.on('routesfound', function(e) {
+                    const routes = e.routes;
+                    const summary = routes[0].summary;
+                    
+                    // パネル表示
+                    document.getElementById('nav-panel').style.display = 'block';
+                    document.getElementById('distance-text').innerText = (summary.totalDistance / 1000).toFixed(1) + " km";
+                    document.getElementById('time-text').innerText = Math.round(summary.totalTime / 60) + " 分";
+                    
+                    // 最初の指示を表示
+                    if(routes[0].instructions.length > 0) {
+                        document.getElementById('instruction-text').innerText = routes[0].instructions[0].text;
+                    }
+
+                    // GPSナビ開始
+                    startGPSNavigation();
+                });
+
+            } catch (err) {
+                alert("エラーが発生しました: " + err);
             }
-
-            // --- B. 軌跡（足跡）描画 ---
-            traceCoords.push(currentPos);
-            if (traceLine) map.removeLayer(traceLine);
-            traceLine = L.polyline(traceCoords, { color: '#00b09b', weight: 8, opacity: 0.6 }).addTo(map);
-
-            // --- C. ルートラインとリルート判定 ---
-            // 擬似的なリルートロジック：
-            // 現在地から目的地への直線を描くが、もし「本来のライン」から大きく外れたら「リルート」演出を入れる。
-            // ※APIがないため、今回は「常に目的地への直線を更新し続ける」ことで自動補正します。
-            
-            // 前回のルートラインまでの距離を計算（簡易版：スタート地点からの距離が離れたらリルートとみなす演出）
-            // ここではシンプルに「常に最新のルート（青点線）を引き直す」処理にします。
-            if (routeLine) map.removeLayer(routeLine);
-            routeLine = L.polyline([currentPos, destinationPos], { color: '#007bff', weight: 5, dashArray: '10, 15' }).addTo(map);
-
-            // リルート演出判定（あくまで演出です）
-            // もし「目的地までの距離」が、直前の計算より極端に増えた場合などを検知できますが、
-            // 今回はシンプルに「30秒おき」や「特定の条件」でアナウンスを入れる代わりに、
-            // 常に最短（直線）を示す仕様としています。
-
-            // --- D. 情報更新 ---
-            const distMeters = map.distance(currentPos, destinationPos);
-            const distKm = distMeters / 1000;
-            
-            // 速度表示 (m/s -> km/h)
-            const speedKmh = speed ? (speed * 3.6).toFixed(0) : 0;
-            document.getElementById('speed-val').innerText = speedKmh;
-
-            updateInfoDisplay(distKm);
-
-            map.panTo(currentPos); // カメラ追従
-
-            // --- E. 到着判定 ---
-            if (distMeters < 30) {
-                speak("まもなく目的地です。案内を終了します。");
-                stopNav();
-            }
         }
 
-        // 表示更新用関数
-        function updateInfoDisplay(distKm) {
-            document.getElementById('dist-val').innerText = distKm.toFixed(1);
-            
-            const speed = speeds[currentMode];
-            const timeMin = Math.round((distKm / speed) * 60);
-            document.getElementById('time-val').innerText = timeMin;
+        // 住所検索関数 (Nominatim API)
+        async function getCoords(query) {
+            const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`;
+            const res = await fetch(url);
+            const data = await res.json();
+            return data[0];
         }
 
-        // リルート（シミュレーション用関数：本来はここでルート再計算APIを叩く）
-        function checkReroute(current, start, end) {
-            // 直線からの乖離距離を計算するのは複雑なため、
-            // 今回は「目的地の方角」が大きく変わった場合にトリガーするなどが考えられます。
-            // このサンプルではシンプルさを優先し、実装を省略しています。
+        // 3. GPS追跡と地図回転
+        function startGPSNavigation() {
+            if (!navigator.geolocation) return;
+
+            watchId = navigator.geolocation.watchPosition(position => {
+                const lat = position.coords.latitude;
+                const lng = position.coords.longitude;
+                const heading = position.coords.heading; // 進行方向 (0-360)
+
+                const currentLatLng = [lat, lng];
+
+                // 自車マーカー更新
+                if (!userMarker) {
+                    userMarker = L.marker(currentLatLng, {
+                        icon: L.divIcon({ className: 'user-marker', iconSize: [20,20] })
+                    }).addTo(map);
+                } else {
+                    userMarker.setLatLng(currentLatLng);
+                }
+
+                // 地図の中心を現在地に
+                map.setView(currentLatLng);
+
+                // ヘディングアップ (地図を回転)
+                if (heading !== null && !isNaN(heading)) {
+                    rotateMap(heading);
+                }
+
+            }, err => console.error(err), {
+                enableHighAccuracy: true,
+                maximumAge: 0
+            });
         }
 
-        // 音声合成
-        function speak(text) {
-            if (!window.speechSynthesis) return;
-            // 読み上げ中の場合はキャンセル
-            window.speechSynthesis.cancel();
-            const uttr = new SpeechSynthesisUtterance(text);
-            uttr.lang = 'ja-JP';
-            uttr.rate = 1.0;
-            window.speechSynthesis.speak(uttr);
+        // 地図回転処理 (CSS Transform)
+        function rotateMap(heading) {
+            // 地図のコンテナ自体を回転させる
+            // ※注: Leafletで地図を回転させると文字も逆さになりますが、APIなしでの実装限界です
+            const mapContainer = document.getElementById('map');
+            mapContainer.style.transform = `rotate(${-heading}deg)`;
+            currentHeading = heading;
         }
+
+        // 回転リセット (北を上にする)
+        function resetMapRotation() {
+            const mapContainer = document.getElementById('map');
+            mapContainer.style.transform = `rotate(0deg)`;
+            currentHeading = 0;
+        }
+
     </script>
 </body>
 </html>
