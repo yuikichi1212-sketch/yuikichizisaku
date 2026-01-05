@@ -127,7 +127,7 @@ body.night #navUI{
      サイドバー
 ============================= -->
 <div id="sidebar">
-  <h1>🧭 ゆいきちナビ</h1>
+  <h1>ゆいきちナビ</h1>
 
   <label>出発地</label>
   <input id="startInput" placeholder="現在地">
