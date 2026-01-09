@@ -432,4 +432,110 @@ function drawPolandballIcon(x, y, type) {
   const pb = POLANDBALLS[type];
 
   switch (pb.name) {
-    case "Palau":      drawPalauFlag(x, y, r); break;
+    case "Palau":      drawPalauFlag(x, y, r); break;    case "Japan":      drawJapanFlag(x, y, r); break;
+    case "Bangladesh": drawBangladeshFlag(x, y, r); break;
+    case "Greenland":  drawGreenlandFlag(x, y, r); break;
+    case "Kyrgyzstan": drawKyrgyzstanFlag(x, y, r); break;
+  }
+
+  drawOutline(x, y, r);
+  drawPolandballSmileEyes(x, y, r);
+}
+
+/* -------------------------
+   入力処理
+------------------------- */
+
+document.addEventListener("keydown", e => {
+  if (!currentPair || paused || gameOver) return;
+
+  if (e.key === "ArrowLeft" && !collides(-1, 0, currentPair.blocks)) {
+    currentPair.cx--;
+  }
+  if (e.key === "ArrowRight" && !collides(1, 0, currentPair.blocks)) {
+    currentPair.cx++;
+  }
+  if (e.key === "ArrowDown") {
+    if (!collides(0, 1, currentPair.blocks)) {
+      currentPair.cy++;
+    } else {
+      lockPair();
+    }
+  }
+  if (e.key === "ArrowUp") rotatePair();
+});
+
+/* -------------------------
+   ゲームループ
+------------------------- */
+
+let lastTime = 0;
+
+function update(time = 0) {
+  const delta = time - lastTime;
+  lastTime = time;
+
+  if (!paused && !gameOver) {
+    dropTimer += delta;
+    if (dropTimer > dropInterval) {
+      dropTimer = 0;
+      if (currentPair) {
+        if (!collides(0, 1, currentPair.blocks)) {
+          currentPair.cy++;
+        } else {
+          lockPair();
+        }
+      } else {
+        spawnPair();
+      }
+    }
+  }
+
+  drawBoard();
+  drawBallInfo();
+
+  if (gameOver) {
+    ctx.fillStyle = "rgba(0,0,0,0.7)";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = "white";
+    ctx.font = "48px sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText("GAME OVER", canvas.width / 2, canvas.height / 2);
+  }
+
+  requestAnimationFrame(update);
+}
+
+/* -------------------------
+   ボタン
+------------------------- */
+
+document.getElementById("startBtn").onclick = () => {
+  if (gameOver) {
+    score = 0;
+    document.getElementById("score").textContent = "Score: 0";
+    gameOver = false;
+    resetBoard();
+    currentPair = null;
+  }
+  paused = false;
+};
+
+document.getElementById("pauseBtn").onclick = () => {
+  paused = !paused;
+};
+
+easyBtn.onclick   = () => setDifficulty("easy");
+normalBtn.onclick = () => setDifficulty("normal");
+hardBtn.onclick   = () => setDifficulty("hard");
+
+/* -------------------------
+   初期化
+------------------------- */
+
+resetBoard();
+spawnPair();
+requestAnimationFrame(update);
+</script>
+</body>
+</html>
