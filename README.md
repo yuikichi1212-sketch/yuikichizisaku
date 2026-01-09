@@ -38,7 +38,7 @@
   </style>
 </head>
 <body>
-  <h1>ポーランドボールぷよぷよ</h1>
+  <h1>ポーランドボいずみー　ぷよぷよしてて草</h1>
 
   <canvas id="game" width="850" height="850"></canvas>
 
