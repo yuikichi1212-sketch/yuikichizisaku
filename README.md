@@ -434,43 +434,54 @@
 
       S.map = map;
       S.mapPane = map.getPane('mapPane'); // .leaflet-map-pane DOM要素
+// ================================
+// Map Rotation (NAV専用・中心固定)
+// ================================
+let mapContainerEl = null;
 
-      // =============================
-      // Markers
-      // =============================
-      function ensureCurMarker(lat,lon){
-        const html = `<div class="marker-heading"></div>`;
-        if(!S.curMarker){
-          S.curMarker = L.marker([lat,lon],{
-            icon: L.divIcon({html, className:'', iconSize:[22,22]}),
-            title:'現在地'
-          }).addTo(map);
-        }
-        S.curMarker.setLatLng([lat,lon]);
-      }
-      function rotateMarkerScreen(deg){
-        // 現在地マーカーの内部DIVを回転
-        try{
-          const el = S.curMarker && S.curMarker.getElement() && S.curMarker.getElement().querySelector('.marker-heading');
-          if(el){ el.style.transform = `rotate(${deg}deg)`; }
-        }catch(e){}
-      }
+function setRotationActive(active){
+  S.rotationActive = active;
+  if(!active){
+    applyMapRotation(0);
+  }
+}
 
-      // =============================
-      // Map Rotation (CSS transform on mapPane)
-      // =============================
-      function applyMapRotation(deg){
-        // スムーズに回すため、scale 少しかけて角隠し
-        const scale = (S.rotationActive ? CFG.MAP_ROTATE_SCALE : 1);
-        S.mapPane.style.transform = `rotate(${deg}deg) scale(${scale})`;
-      }
+function applyMapRotation(deg){
+  if(!mapContainerEl){
+    mapContainerEl = document.querySelector('.leaflet-container');
+    if(!mapContainerEl) return;
+  }
+  mapContainerEl.style.transform = deg === 0 ? '' : `rotate(${deg}deg)`;
+}
 
-      function setRotationActive(active){
-        if(S.rotationActive === active) return;
-        S.rotationActive = active;
-        if(!active){
-          S.targetMapRotation = 0;
-        }
+function onNavPos(pos){
+  const { latitude:lat, longitude:lon, heading } = pos.coords;
+  if(!lat || !lon) return;
+
+  const headingDeg = Number.isFinite(heading) ? heading : 0;
+
+  // --- 常に現在地を中心 ---
+  if(S.follow){
+    const z = clamp(map.getZoom(), CFG.FOLLOW_MIN_ZOOM, CFG.FOLLOW_MAX_ZOOM);
+    map.setView([lat, lon], z, { animate:false });
+  }
+
+  // --- ナビ中だけ回転 ---
+  if(S.rotate && S.nav){
+    setRotationActive(true);
+    S.targetMapRotation = -headingDeg;
+  }else{
+    setRotationActive(false);
+    S.targetMapRotation = 0;
+  }
+
+  // --- マーカー回転（既存仕様維持） ---
+  if(S.rotationActive){
+    rotateMarkerScreen(0);
+  }else{
+    rotateMarkerScreen(headingDeg);
+  }
+}
         // レイアウトを安定させる
         requestAnimationFrame(()=> map.invalidateSize({debounceMoveend:true}));
       }
