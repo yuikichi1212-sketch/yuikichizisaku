@@ -459,29 +459,7 @@ function onNavPos(pos){
   if(!lat || !lon) return;
 
   const headingDeg = Number.isFinite(heading) ? heading : 0;
-  // --- 常に現在地を中心 ---
-  if(S.follow){
-    const z = clamp(map.getZoom(), CFG.FOLLOW_MIN_ZOOM, CFG.FOLLOW_MAX_ZOOM);
-    map.setView([lat, lon], z, { animate:false });
-  }
-
-  // --- ナビ中だけ回転 ---
-  if(S.rotate && S.nav){
-    setRotationActive(true);
-    S.targetMapRotation = -headingDeg;
-  }else{
-    setRotationActive(false);
-    S.targetMapRotation = 0;
-  }
-
-  // --- マーカー回転（既存仕様維持） ---
-  if(S.rotationActive){
-    rotateMarkerScreen(0);
-  }else{
-    rotateMarkerScreen(headingDeg);
-  }
-}
-        // レイアウトを安定させる
+  // レイアウトを安定させる
         requestAnimationFrame(()=> map.invalidateSize({debounceMoveend:true}));
       }
 
@@ -1034,6 +1012,28 @@ function onNavPos(pos){
 
     })();
   }
+  // --- 常に現在地を中心 ---
+  if(S.follow){
+    const z = clamp(map.getZoom(), CFG.FOLLOW_MIN_ZOOM, CFG.FOLLOW_MAX_ZOOM);
+    map.setView([lat, lon], z, { animate:false });
+  }
+
+  // --- ナビ中だけ回転 ---
+  if(S.rotate && S.nav){
+    setRotationActive(true);
+    S.targetMapRotation = -headingDeg;
+  }else{
+    setRotationActive(false);
+    S.targetMapRotation = 0;
+  }
+
+  // --- マーカー回転（既存仕様維持） ---
+  if(S.rotationActive){
+    rotateMarkerScreen(0);
+  }else{
+    rotateMarkerScreen(headingDeg);
+  }
+}
   </script>
 </body>
 </html>
