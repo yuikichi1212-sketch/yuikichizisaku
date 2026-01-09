@@ -459,7 +459,6 @@ function onNavPos(pos){
   if(!lat || !lon) return;
 
   const headingDeg = Number.isFinite(heading) ? heading : 0;
-
   // --- 常に現在地を中心 ---
   if(S.follow){
     const z = clamp(map.getZoom(), CFG.FOLLOW_MIN_ZOOM, CFG.FOLLOW_MAX_ZOOM);
