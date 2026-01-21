@@ -218,14 +218,14 @@
     function popMsg() {
         const p = document.createElement("div");
         p.className = "zako-pop";
-        p.innerText = "ザコ！";
+        p.innerText = "ザコ草！";
         p.style.left = Math.random()*80+"%"; p.style.top = Math.random()*80+"%";
         document.getElementById("stage").appendChild(p);
         setTimeout(()=>p.remove(), 800);
     }
 
     function useSkill() {
-        say("はい甘え。実力じゃ無理だもんなｗ");
+        say("うん！、来ると思った！、実力じゃ無理だもんなｗ");
         board = Array.from({length:R}, ()=>Array(C).fill(null));
         g=0; document.getElementById("gauge-bar").style.width = "0%";
         document.getElementById("skill-btn").style.display="none";
@@ -233,7 +233,7 @@
 
     /* --- PC破壊ボタン演出（強化版） --- */
     function destroyPC() {
-        say("お前のPC、情弱すぎて耐えきれなくなったぞｗ さよならｗｗｗ");
+        say("jaisjsおfsつfsかrieれ");
         const body = document.getElementById("main-body");
         body.classList.add("system-crashing");
         
@@ -254,7 +254,7 @@
 
         setTimeout(() => {
             body.classList.remove("system-crashing");
-            alert("【悲報】お前のPC、煽り耐性が低すぎて再起動が必要です（嘘）");
+            alert("PCに煽り菌が発生しました。今すぐ再起動してください！");
             document.querySelectorAll("div[style*='position: fixed']").forEach(el => el.remove());
         }, 3000);
     }
