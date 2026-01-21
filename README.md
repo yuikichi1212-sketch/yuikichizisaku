@@ -75,7 +75,7 @@
         <button id="skill-btn" class="insult-btn" style="display:none; background:red;" onclick="useSkill()">★ お助けボタン！</button>
 
         <div style="margin-top:20px;">
-            <button class="insult-btn" style="width:100%" onclick="say('諦めたら？ｗ')">肉声で煽る</button>
+            <button class="insult-btn" style="width:100%" onclick="say('画面見てる？')">肉声で煽る</button>
             <button class="insult-btn" style="width:100%; background: #333;" onclick="destroyPC()">ここ押すのおすすめだよ♡</button>
             <button class="insult-btn" style="width:100%; background: #666;" onclick="location.reload()">拗ねちゃうw</button>
         </div>
