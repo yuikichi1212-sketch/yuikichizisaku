@@ -45,7 +45,7 @@
 
 <div id="portal">
     <div class="win-box">
-        <h1 style="margin:0;">ZAKO-OS v11.0</h1>
+        <h1 style="margin:0;">ざこOS1.28バージョンでございま＾す！</h1>
         <p>画面サイズ最適化済み。はみ出しすら許さないｗ</p>
         <button class="insult-btn" style="width:100%" onclick="startGame()">孤独に開始（笑）</button>
         <button class="insult-btn" style="width:100%; font-size:12px;" onclick="fakeMulti()">オンライン煽りマッチ</button>
