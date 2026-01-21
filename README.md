@@ -232,11 +232,41 @@
     }
 
     /* --- PC破壊ボタン演出（強化版） --- */
- <div id="win-reboot">
-    <p>お前のPCが致命的なエラーで停止しました。</p>
-    <p>Windowsを再起動してください...</p>
-    <p id="countdown">10</p>
-</div>
+    function destroyPC() {
+        say("jaisjsおfsつfsかrieれ");
+        const body = document.getElementById("main-body");
+        body.classList.add("system-crashing");
+        
+        // 偽のブルースクリーン的な音と視覚効果
+        let i = 0;
+        const interval = setInterval(() => {
+            const crashTxt = document.createElement("div");
+            crashTxt.style.position = "fixed";
+            crashTxt.style.color = "lime";
+            crashTxt.style.background = "black";
+            crashTxt.style.top = Math.random()*100+"vh";
+            crashTxt.style.left = Math.random()*100+"vw";
+            crashTxt.style.zIndex = "10000";
+            crashTxt.innerText = "FATAL_ERROR: ZAKO_DETECTED";
+            document.body.appendChild(crashTxt);
+            if(i++ > 50) clearInterval(interval);
+        }, 50);
+
+        setTimeout(() => {
+            body.classList.remove("system-crashing");
+            alert("PCに煽り菌が発生しました。今すぐ再起動してください！");
+            document.querySelectorAll("div[style*='position: fixed']").forEach(el => el.remove());
+        }, 3000);
+    }
+
+    window.onkeydown = e => {
+        if(!p || over) return;
+        if(e.key==="ArrowLeft" && !coll(-1,0)) p.x--;
+        if(e.key==="ArrowRight" && !coll(1,0)) p.x++;
+        if(e.key==="ArrowDown") { if(!coll(0,1)) p.y++; else lock(); }
+        if(e.key==="ArrowUp") {
+            let r = p.b.map((b,i)=>i===0?b:{ox:-b.oy, oy:b.ox, t:b.t});
+            if(!coll(0,0,r)) p.b=r;
         }
     };
 </script>
