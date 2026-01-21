@@ -96,7 +96,7 @@ canvas { background: #fff; border: 8px solid #000; max-height: 90vh; max-width: 
 </div>
 
 <div id="win-reboot">
-    <p>お前のPCが致命的なエラーで停止しました。</p>
+    <p>PCが煽り菌によるエラーで停止しました。</p>
     <p>Windowsを再起動してください...</p>
     <p id="countdown">10</p>
 </div>
