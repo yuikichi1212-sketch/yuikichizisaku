@@ -1,541 +1,273 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8" />
-  <title>国旗ポーランドボールゲーム</title>
-  <style>
-    body {
-      background: #222;
-      color: #eee;
-      font-family: system-ui, sans-serif;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      margin: 0;
-      padding: 10px;
-    }
-    h1 {
-      margin: 5px 0;
-      font-size: 20px;
-    }
-    canvas {
-      background: #111;
-      border: 2px solid #555;
-    }
-    #controls {
-      margin-top: 10px;
-    }
-    button {
-      padding: 6px 12px;
-      margin: 0 5px;
-      font-size: 14px;
-      cursor: pointer;
-    }
-    #score {
-      margin-top: 10px;
-      font-size: 18px;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <title>【極】ザコ専用PBぷよぷよ：最終審判</title>
+    <style>
+        :root { --bg: #fff; --text: #000; --warn: #f00; }
+        body { background: var(--bg); color: var(--text); font-family: 'MS Gothic', 'Courier New', monospace; margin: 0; overflow: hidden; }
+
+        /* メインコンテナ */
+        #os-root { display: flex; flex-direction: column; width: 100vw; height: 100vh; border: 20px solid #000; box-sizing: border-box; }
+        
+        /* 煽りポータル（スタート画面） */
+        #portal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #fff; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .win-95 { border: 4px solid #000; padding: 60px; background: #ccc; box-shadow: 10px 10px 0px #000; text-align: center; }
+
+        /* ゲームエリア */
+        #stage { flex-grow: 1; display: flex; justify-content: center; align-items: center; position: relative; background: #eee; }
+        canvas { background: #fff; border: 10px solid #000; box-shadow: 0 0 100px rgba(255,0,0,0.1); }
+
+        /* サイドパネル（右側） */
+        #right-ui { width: 350px; background: #ddd; border-left: 10px solid #000; padding: 20px; box-sizing: border-box; display: flex; flex-direction: column; }
+        .lcd-display { background: #9db310; border: 4px inset #666; padding: 10px; font-family: 'Digital-7', monospace; color: #222; margin-bottom: 20px; }
+        
+        /* 煽りボタン群 */
+        .insult-btn { background: #000; color: #fff; border: 4px outset #999; padding: 15px; margin: 5px 0; cursor: pointer; font-weight: bold; font-size: 16px; }
+        .insult-btn:hover { background: #f00; color: #000; transform: scale(1.05); }
+        .insult-btn:active { border-style: inset; }
+
+        /* 警告ポップアップ（動的生成用） */
+        .zako-popup { position: absolute; width: 200px; height: 100px; background: #ff0; border: 3px solid #f00; color: #f00; font-weight: bold; z-index: 1000; padding: 10px; pointer-events: none; animation: pop 0.5s ease-out; }
+        @keyframes pop { from { transform: scale(0); rotate: 720deg; } to { transform: scale(1); rotate: 0deg; } }
+
+        /* 画面振動 */
+        .vibrate { animation: v 0.05s infinite; }
+        @keyframes v { 0% { translate: 2px 2px; } 50% { translate: -2px -2px; } 100% { translate: 0 0; } }
+
+        /* 難易度・通信ボタン */
+        .sub-btn { font-size: 12px; padding: 5px; margin-top: 5px; background: #666; color: #fff; border: none; cursor: pointer; }
+    </style>
 </head>
-<body>
-  <h1>ポーランドボいずみー　ぷよぷよしてて草</h1>
+<body id="b">
 
-  <canvas id="game" width="850" height="850"></canvas>
+<div id="os-root">
+    <div id="portal">
+        <div class="win-95">
+            <h1 style="font-size: 60px; margin: 0;">ZAKO-OS v10.0</h1>
+            <p style="font-size: 20px; color: red;">※お前の低スペックな人生を初期化中ｗｗｗ</p>
+            <hr border="4">
+            <button class="insult-btn" style="width: 100%;" onclick="start(500)">ソロプレイ開始（ボッチ乙ｗｗ）</button>
+            <button class="insult-btn" style="width: 100%; font-size: 14px;" onclick="fakeMulti()">超・煽り通信対戦（笑）</button>
+            <div style="margin-top: 20px;">
+                <p>難易度設定（どうせどれもできないだろｗ）</p>
+                <button class="sub-btn" onclick="spd=1000; say('赤ちゃん用ねｗ')">赤ちゃん</button>
+                <button class="sub-btn" onclick="spd=400; say('普通？お前には無理ｗ')">普通</button>
+                <button class="sub-btn" onclick="spd=80; say('死ぬぞｗ')">神レベル</button>
+            </div>
+        </div>
+    </div>
 
-  <div id="controls">
-    <button id="startBtn">▶ 再生</button>
-    <button id="pauseBtn">⏸ 一時停止</button>
-  </div>
+    <div style="background: #000; color: #0f0; padding: 5px; font-size: 14px; text-align: center;">
+        SYSTEM_STATUS: [お前の指が遅すぎてCPUがあくびしてます] | 接続：ぼっち回線(速度1bps)
+    </div>
+    
+    <div style="display: flex; flex: 1;">
+        <div id="stage">
+            <canvas id="cvs" width="750" height="850"></canvas>
+            </div>
 
-  <div id="score">Score: 0</div>
-<div id="difficulty">
-  <button id="easyBtn">簡単</button>
-  <button id="normalBtn">普通</button>
-  <button id="hardBtn">難しい</button>
+        <div id="right-ui">
+            <div class="lcd-display">
+                <div style="font-size: 14px;">Z雑魚スコア:</div>
+                <div id="score" style="font-size: 40px; text-align: right;">000000</div>
+            </div>
+
+            <p style="font-weight: bold;">お助けゲージ：</p>
+            <div style="width: 100%; height: 30px; background: #333; border: 4px solid #000;">
+                <div id="gauge" style="width: 0%; height: 100%; background: linear-gradient(90deg, #f00, #ff0);"></div>
+            </div>
+            
+            <button id="skill" class="insult-btn" style="display:none; background: #f00;" onclick="skill()">🔥 革命（お前の罪を消す）</button>
+
+            <div style="margin-top: 50px;">
+                <p>煽りアクション：</p>
+                <button class="insult-btn" style="width: 100%; font-size: 12px;" onclick="say('おい、画面見ろよｗ')">直接煽る（声）</button>
+                <button class="insult-btn" style="width: 100%; font-size: 12px;" onclick="location.reload()">敗走（逃げる）</button>
+                <button class="insult-btn" style="width: 100%; font-size: 12px;" onclick="hackEffect()">PC破壊（偽）</button>
+            </div>
+            
+            <div style="flex-grow: 1; border: 2px dashed #666; margin-top: 20px; font-size: 11px; padding: 5px;">
+                履歴:<br>
+                - 接続成功（ぼっち）<br>
+                - ザコ検知: OK<br>
+                - 煽りモジュール: 正常
+            </div>
+        </div>
+    </div>
 </div>
 
- <script>
-  const COLS = 12;
-  const ROWS = 12;
-  const CELL = 70;
+<script>
+    const C=10, R=12, S=70, cvs=document.getElementById("cvs"), ctx=cvs.getContext("2d");
+    let board=[], p=null, sc=0, g=0, over=false, active=false, spd=400, timer=0, last=0;
 
-function setDifficulty(level) {
-  if (level === "easy") dropInterval = 900;   // ゆっくり
-  if (level === "normal") dropInterval = 500; // 標準
-  if (level === "hard") dropInterval = 250;   // 速い
-}
-  const canvas = document.getElementById("game");
-  const ctx = canvas.getContext("2d");
+    const BALLS = [
+        { c1: "#4AADD6", c2: "#FFDE00" }, // Palau
+        { c1: "#FFFFFF", c2: "#BC002D" }, // Japan
+        { c1: "#006A4E", c2: "#F42A41" }, // Bangladesh
+        { c1: "#FFFFFF", c2: "#d00c33" }, // Greenland
+        { c1: "#E8112D", c2: "#FFD700" }  // Kyrgyzstan
+    ];
 
-  let score = 0;
-  let paused = false;
+    const INSULTS = ["下手くそワロタ", "それ置くの？ｗ", "赤ちゃんかな？", "ゆびいたい？♡", "指ついてる？", "画面見てる？", "運ゲー乙ｗ"];
 
-  /* -------------------------
-     国旗データ・描画
-  ------------------------- */
-
- const POLANDBALLS = [
-  { id: 0, name: "Palau", desc: "青い海と黄色い月" },
-  { id: 1, name: "Japan", desc: "白地に赤い日の丸" },
-  { id: 2, name: "Bangladesh", desc: "緑地に赤い太陽" },
-  { id: 3, name: "Greenland", desc: "赤白の半円デザイン" },
-  { id: 4, name: "Kyrgyzstan", desc: "赤地に太陽とユルト模様" },
-];
-
-  function drawCircleBase(x, y, r) {
-    ctx.beginPath();
-    ctx.arc(x, y, r, 0, Math.PI * 2);
-    ctx.closePath();
-  }
-
-  function drawPalauFlag(x, y, r) {
-    ctx.beginPath();
-    ctx.arc(x, y, r, 0, Math.PI * 2);
-    ctx.fillStyle = "#4AADD6";
-    ctx.fill();
-
-    ctx.beginPath();
-    ctx.arc(x - r * 0.25, y, r * 0.45, 0, Math.PI * 2);
-    ctx.fillStyle = "#FFDE00";
-    ctx.fill();
-  }
-
-  function drawJapanFlag(x, y, r) {
-    drawCircleBase(x, y, r);
-    ctx.fillStyle = "#ffffff";
-    ctx.fill();
-
-    ctx.beginPath();
-    ctx.arc(x, y, r * 0.45, 0, Math.PI * 2);
-    ctx.fillStyle = "#bc002d";
-    ctx.fill();
-  }
-
-  function drawBangladeshFlag(x, y, r) {
-    ctx.beginPath();
-    ctx.arc(x, y, r, 0, Math.PI * 2);
-    ctx.fillStyle = "#006A4E";
-    ctx.fill();
-
-    ctx.beginPath();
-    ctx.arc(x - r * 0.2, y, r * 0.45, 0, Math.PI * 2);
-    ctx.fillStyle = "#F42A41";
-    ctx.fill();
-  }
-
-  function drawGreenlandFlag(x, y, r) {
-    ctx.beginPath();
-    ctx.arc(x, y, r, Math.PI, 0);
-    ctx.lineTo(x, y);
-    ctx.closePath();
-    ctx.fillStyle = "#ffffff";
-    ctx.fill();
-
-    ctx.beginPath();
-    ctx.arc(x, y, r, 0, Math.PI);
-    ctx.lineTo(x, y);
-    ctx.closePath();
-    ctx.fillStyle = "#d00c33";
-    ctx.fill();
-
-    ctx.beginPath();
-    ctx.arc(x - r * 0.25, y, r * 0.45, Math.PI, 0);
-    ctx.closePath();
-    ctx.fillStyle = "#d00c33";
-    ctx.fill();
-
-    ctx.beginPath();
-    ctx.arc(x - r * 0.25, y, r * 0.45, 0, Math.PI);
-    ctx.closePath();
-    ctx.fillStyle = "#ffffff";
-    ctx.fill();
-  }
-
-  function drawKyrgyzstanFlag(x, y, r) {
-    ctx.beginPath();
-    ctx.arc(x, y, r, 0, Math.PI * 2);
-    ctx.closePath();
-    ctx.fillStyle = "#E8112D";
-    ctx.fill();
-
-    const sunR = r * 0.45;
-    ctx.beginPath();
-    ctx.arc(x, y, sunR, 0, Math.PI * 2);
-    ctx.closePath();
-    ctx.fillStyle = "#FFD700";
-    ctx.fill();
-
-    ctx.save();
-    ctx.translate(x, y);
-    ctx.rotate(Math.PI / 6);
-
-    ctx.beginPath();
-    ctx.ellipse(0, 0, sunR * 0.75, sunR * 0.35, 0, 0, Math.PI * 2);
-    ctx.strokeStyle = "#E8112D";
-    ctx.lineWidth = sunR * 0.18;
-    ctx.stroke();
-
-    ctx.rotate(Math.PI / 2);
-    ctx.beginPath();
-    ctx.ellipse(0, 0, sunR * 0.75, sunR * 0.35, 0, 0, Math.PI * 2);
-    ctx.stroke();
-
-    ctx.restore();
-  }
-
-  function drawPolandballSmileEyes(x, y, r) {
-    const ex = r * 0.45;
-    const ey = -r * 0.05;
-    const w = r * 0.22;
-
-    ctx.strokeStyle = "#000";
-    ctx.lineWidth = r * 0.10;
-
-    ctx.beginPath();
-    ctx.arc(x - ex, y + ey, w, 0, Math.PI);
-    ctx.stroke();
-
-    ctx.beginPath();
-    ctx.arc(x + ex, y + ey, w, 0, Math.PI);
-    ctx.stroke();
-  }
-
-  function drawOutline(x, y, r) {
-    ctx.beginPath();
-    ctx.arc(x, y, r, 0, Math.PI * 2);
-    ctx.lineWidth = r * 0.12;
-    ctx.strokeStyle = "#000000";
-    ctx.stroke();
-  }
-
-  function drawPolandball(col, row, type) {
-    const pb = POLANDBALLS[type];
-    const x = col * CELL + CELL / 2;
-    const y = row * CELL + CELL / 2;
-    const r = CELL * 0.45;
-
-    switch (pb.name) {
-      case "Palau":      drawPalauFlag(x, y, r); break;
-      case "Japan":      drawJapanFlag(x, y, r); break;
-      case "Bangladesh": drawBangladeshFlag(x, y, r); break;
-      case "Greenland":  drawGreenlandFlag(x, y, r); break;
-      case "Kyrgyzstan": drawKyrgyzstanFlag(x, y, r); break;
+    function say(t) {
+        const u = new SpeechSynthesisUtterance(t);
+        u.pitch = Math.random() * 2; u.rate = 1.3;
+        speechSynthesis.speak(u);
     }
 
-    drawOutline(x, y, r);
-    drawPolandballSmileEyes(x, y, r);
-  }
-
-  /* -------------------------
-     ゲームロジック
-  ------------------------- */
-
-  let board = [];
-  function resetBoard() {
-    board = [];
-    for (let r = 0; r < ROWS; r++) {
-      const row = [];
-      for (let c = 0; c < COLS; c++) row.push(null);
-      board.push(row);
-    }
-  }
-
-  let currentPair = null;
-  let gameOver = false;
-  let dropTimer = 0;
-  let dropInterval = 500;
-
-  function randomBallType() {
-    return Math.floor(Math.random() * POLANDBALLS.length);
-  }
-
-  function spawnPair() {
-    const cx = Math.floor(COLS / 2);
-    const cy = 0;
-
-    // ★ ここでゲームオーバー判定
-    if (board[cy][cx] !== null) {
-      gameOver = true;
-      return;
+    function createPopup() {
+        const pop = document.createElement("div");
+        pop.className = "zako-popup";
+        pop.innerText = INSULTS[Math.floor(Math.random()*INSULTS.length)];
+        pop.style.left = Math.random() * 500 + "px";
+        pop.style.top = Math.random() * 600 + "px";
+        document.getElementById("stage").appendChild(pop);
+        setTimeout(() => pop.remove(), 1000);
     }
 
-    const t1 = randomBallType();
-    const t2 = randomBallType();
-
-    currentPair = {
-      cx,
-      cy,
-      blocks: [
-        { ox: 0, oy: 0, type: t1 },
-        { ox: 0, oy: -1, type: t2 }
-      ],
-    };
-  }
-
-  function collides(dx, dy, blocks) {
-    for (const b of blocks) {
-      const x = currentPair.cx + b.ox + dx;
-      const y = currentPair.cy + b.oy + dy;
-      if (x < 0 || x >= COLS || y >= ROWS) return true;
-      if (y >= 0 && board[y][x] !== null) return true;
+    function start() {
+        document.getElementById("portal").style.display = "none";
+        board = Array.from({length:R}, ()=>Array(C).fill(null));
+        sc=0; g=0; over=false; active=true;
+        say("ザコ専用OS、ブート開始。お前の実力を笑いに来たぞｗ");
+        spawn(); update();
     }
-    return false;
-  }
 
-  function rotatePair() {
-    const rotated = currentPair.blocks.map((b, i) => {
-      if (i === 0) return { ...b };
-      return { ox: -b.oy, oy: b.ox, type: b.type };
-    });
-    const old = currentPair.blocks;
-    currentPair.blocks = rotated;
-    if (collides(0, 0, rotated)) currentPair.blocks = old;
-  }
-
-  function lockPair() {
-    for (const b of currentPair.blocks) {
-      const x = currentPair.cx + b.ox;
-      const y = currentPair.cy + b.oy;
-      if (y >= 0) board[y][x] = { type: b.type };
-      else {
-        // 画面外（上）に食い込んだら即ゲームオーバー
-        gameOver = true;
-      }
+    function fakeMulti() {
+        say("対戦相手を検索中... あ、一人見つかりましたよ（笑）");
+        setTimeout(() => {
+            alert("対戦相手: [伝説のぷよ師] が入室しました。");
+            say("相手が『え、人？？ザコすぎて時間の無駄だわ（笑）お前とやる価値ない』と言って切断しました。");
+            setTimeout(() => {
+                alert("対戦相手が「お前とはやる価値がないｗ」と言って切断しました。");
+                say("はい、ぼっち確定。一人で虚しくやってな（笑）");
+            }, 2000);
+        }, 1500);
     }
-    currentPair = null;
-    clearMatches();
-  }
 
-  function clearMatches() {
-    let chain = 0;
+    function spawn() {
+        p = {x:4, y:0, b:[{ox:0, oy:0, t:rand()}, {ox:0, oy:-1, t:rand()}]};
+        if(board[0][4]) {
+            over=true;
+            say("はい、ゲームオーバー。ザコ。本当にザコ。こっからどうするの？ｗにげちゃうかな？（笑）");
+        }
+    }
+    function rand() { return Math.floor(Math.random()*5); }
 
-    while (true) {
-      let visited = Array.from({ length: ROWS }, () => Array(COLS).fill(false));
-      let cleared = false;
+    function drawBall(x, y, t) {
+        const r = S*0.45;
+        ctx.save();
+        ctx.translate(x*S+S/2, y*S+S/2);
+        ctx.beginPath(); ctx.arc(0,0,r,0,Math.PI*2); ctx.fillStyle=BALLS[t].c1; ctx.fill();
+        ctx.strokeStyle="#000"; ctx.lineWidth=3; ctx.stroke();
+        ctx.beginPath(); ctx.arc(-r*0.3,0,r*0.4,0,Math.PI*2); ctx.fillStyle=BALLS[t].c2; ctx.fill();
+        // 煽り目
+        ctx.strokeStyle="#000"; ctx.lineWidth=2;
+        ctx.beginPath(); ctx.moveTo(-10,-5); ctx.lineTo(-2,-5); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(10,-5); ctx.lineTo(2,-5); ctx.stroke();
+        ctx.restore();
+    }
 
-      for (let r = 0; r < ROWS; r++) {
-        for (let c = 0; c < COLS; c++) {
-          if (!board[r][c] || visited[r][c]) continue;
-
-          const type = board[r][c].type;
-          const stack = [{ r, c }];
-          const group = [];
-          visited[r][c] = true;
-
-          while (stack.length) {
-            const { r: cr, c: cc } = stack.pop();
-            group.push({ r: cr, c: cc });
-
-            const dirs = [
-              { dr: -1, dc: 0 },
-              { dr: 1, dc: 0 },
-              { dr: 0, dc: -1 },
-              { dr: 0, dc: 1 },
-            ];
-
-            for (const d of dirs) {
-              const nr = cr + d.dr;
-              const nc = cc + d.dc;
-              if (
-                nr >= 0 && nr < ROWS &&
-                nc >= 0 && nc < COLS &&
-                !visited[nr][nc] &&
-                board[nr][nc] &&
-                board[nr][nc].type === type
-              ) {
-                visited[nr][nc] = true;
-                stack.push({ r: nr, c: nc });
-              }
+    function update(t=0) {
+        if(!active) return;
+        const dt = t - last; last = t;
+        if(!over) {
+            timer += dt;
+            if(timer > spd) {
+                timer=0;
+                if(!coll(0,1)) p.y++; else lock();
             }
-          }
-
-          if (group.length >= 4) {
-            cleared = true;
-            for (const g of group) board[g.r][g.c] = null;
-          }
         }
-      }
-
-      if (!cleared) break;
-
-      chain++;
-      applyGravity();
-    }
-
-    if (chain > 0) {
-      score += chain * 100;
-      document.getElementById("score").textContent = "Score: " + score;
-    }
-  }
-
-  function applyGravity() {
-    for (let c = 0; c < COLS; c++) {
-      let write = ROWS - 1;
-      for (let r = ROWS - 1; r >= 0; r--) {
-        if (board[r][c]) {
-          if (write !== r) {
-            board[write][c] = board[r][c];
-            board[r][c] = null;
-          }
-          write--;
+        ctx.clearRect(0,0,750,850);
+        board.forEach((row,y)=>row.forEach((v,x)=>{ if(v!==null) drawBall(x,y,v); }));
+        if(p) p.b.forEach(b=>drawBall(p.x+b.ox, p.y+b.oy, b.t));
+        if(over) {
+            ctx.fillStyle="rgba(255,0,0,0.8)"; ctx.fillRect(0,0,750,850);
+            ctx.fillStyle="#fff"; ctx.font="60px bold serif"; ctx.textAlign="center";
+            ctx.fillText("ザコすぎて話にならなくてくうさ！", 375, 425);
         }
-      }
-    }
-  }
-  function drawBoard() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    for (let r = 0; r < ROWS; r++) {
-      for (let c = 0; c < COLS; c++) {
-        if (board[r][c]) drawPolandball(c, r, board[r][c].type);
-      }
+        requestAnimationFrame(update);
     }
 
-    if (currentPair) {
-      for (const b of currentPair.blocks) {
-        const x = currentPair.cx + b.ox;
-        const y = currentPair.cy + b.oy;
-        if (y >= 0) drawPolandball(x, y, b.type);
-      }
+    function coll(dx,dy,blks=p.b) {
+        return blks.some(b=>{
+            let nx=p.x+b.ox+dx, ny=p.y+b.oy+dy;
+            return nx<0||nx>=C||ny>=R||(ny>=0&&board[ny][nx]!==null);
+        });
     }
-  }
 
-function drawBallInfo() {
-  const startX = canvas.width - 180; // ← キャンバス内に収める
-  let y = 40;
-
-  ctx.textAlign = "left";
-  ctx.font = "22px Arial";
-
-  for (const ball of POLANDBALLS) {
-    // 名前
-    ctx.fillStyle = "white";
-    ctx.fillText(ball.name, startX, y);
-
-    // 説明
-    ctx.font = "16px Arial";
-    ctx.fillStyle = "#cccccc";
-    ctx.fillText(ball.desc, startX, y + 20);
-
-    // 小アイコン
-    drawPolandballIcon(startX - 30, y - 10, ball.id);
-
-    y += 60;
-    ctx.font = "22px Arial";
-  }
-}
-
-
-
-function drawPolandballIcon(x, y, type) {
-  const r = 15;
-  const pb = POLANDBALLS[type];
-
-  switch (pb.name) {
-    case "Palau":      drawPalauFlag(x, y, r); break;    case "Japan":      drawJapanFlag(x, y, r); break;
-    case "Bangladesh": drawBangladeshFlag(x, y, r); break;
-    case "Greenland":  drawGreenlandFlag(x, y, r); break;
-    case "Kyrgyzstan": drawKyrgyzstanFlag(x, y, r); break;
-  }
-
-  drawOutline(x, y, r);
-  drawPolandballSmileEyes(x, y, r);
-}
-
-/* -------------------------
-   入力処理
-------------------------- */
-
-document.addEventListener("keydown", e => {
-  if (!currentPair || paused || gameOver) return;
-
-  if (e.key === "ArrowLeft" && !collides(-1, 0, currentPair.blocks)) {
-    currentPair.cx--;
-  }
-  if (e.key === "ArrowRight" && !collides(1, 0, currentPair.blocks)) {
-    currentPair.cx++;
-  }
-  if (e.key === "ArrowDown") {
-    if (!collides(0, 1, currentPair.blocks)) {
-      currentPair.cy++;
-    } else {
-      lockPair();
+    function lock() {
+        p.b.forEach(b=>{ if(p.y+b.oy>=0) board[p.y+b.oy][p.x+b.ox]=b.t; });
+        check(); spawn();
     }
-  }
-  if (e.key === "ArrowUp") rotatePair();
-});
 
-/* -------------------------
-   ゲームループ
-------------------------- */
-
-let lastTime = 0;
-
-function update(time = 0) {
-  const delta = time - lastTime;
-  lastTime = time;
-
-  if (!paused && !gameOver) {
-    dropTimer += delta;
-    if (dropTimer > dropInterval) {
-      dropTimer = 0;
-      if (currentPair) {
-        if (!collides(0, 1, currentPair.blocks)) {
-          currentPair.cy++;
-        } else {
-          lockPair();
+    function check() {
+        let hit = false;
+        for(let y=0; y<R; y++) for(let x=0; x<C; x++) {
+            if(board[y][x]===null) continue;
+            let target=board[y][x], group=[], visited=board.map(r=>r.map(()=>false)), stack=[{x,y}];
+            visited[y][x]=true;
+            while(stack.length){
+                let c=stack.pop(); group.push(c);
+                [[0,1],[0,-1],[1,0],[-1,0]].forEach(d=>{
+                    let nx=c.x+d[0], ny=c.y+d[1];
+                    if(nx>=0&&nx<C&&ny>=0&&ny<R&&!visited[ny][nx]&&board[ny][nx]===target){
+                        visited[ny][nx]=true; stack.push({x:nx,y:ny});
+                    }
+                });
+            }
+            if(group.length >= 4) {
+                group.forEach(g=>board[g.y][g.x]=null);
+                hit=true; sc+=group.length*100; g=Math.min(100, g+20);
+                createPopup();
+            }
         }
-      } else {
-        spawnPair();
-      }
+        if(hit) {
+            gravity();
+            document.getElementById("score").innerText = sc.toString().padStart(6, '0');
+            document.getElementById("gauge").style.width = g + "%";
+            if(g>=100) document.getElementById("skill").style.display="block";
+            say(INSULTS[Math.floor(Math.random()*INSULTS.length)]);
+            document.getElementById("b").classList.add("vibrate");
+            setTimeout(()=>document.getElementById("b").classList.remove("vibrate"), 200);
+            setTimeout(check, 250);
+        }
     }
-  }
 
-  drawBoard();
-  drawBallInfo();
+    function gravity() {
+        for(let x=0; x<C; x++){
+            let empty=R-1;
+            for(let y=R-1; y>=0; y--) if(board[y][x]!==null){ let t=board[y][x]; board[y][x]=null; board[empty][x]=t; empty--; }
+        }
+    }
 
-  if (gameOver) {
-    ctx.fillStyle = "rgba(0,0,0,0.7)";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = "white";
-    ctx.font = "48px sans-serif";
-    ctx.textAlign = "center";
-    ctx.fillText("GAME OVER", canvas.width / 2, canvas.height / 2);
-  }
+    function skill() {
+        say("はい、実力じゃ勝てないから神頼みね（笑） 情けなくて草");
+        board = Array.from({length:R}, ()=>Array(C).fill(null));
+        g=0; document.getElementById("gauge").style.width = "0%";
+        document.getElementById("skill").style.display="none";
+        document.getElementById("stage").style.filter = "invert(1)";
+        setTimeout(()=>document.getElementById("stage").style.filter = "none", 1000);
+    }
 
-  requestAnimationFrame(update);
-}
+    function hackEffect() {
+        say("あーあ、変なボタン押しちゃった。お前のPC、もうザコすぎて耐えられないってさｗ");
+        document.body.style.transform = "rotate(5deg) scale(0.9)";
+        setTimeout(()=>document.body.style.transform = "none", 2000);
+    }
 
-/* -------------------------
-   ボタン
-------------------------- */
-
-document.getElementById("startBtn").onclick = () => {
-  if (gameOver) {
-    score = 0;
-    document.getElementById("score").textContent = "Score: 0";
-    gameOver = false;
-    resetBoard();
-    currentPair = null;
-  }
-  paused = false;
-};
-
-document.getElementById("pauseBtn").onclick = () => {
-  paused = !paused;
-};
-
-easyBtn.onclick   = () => setDifficulty("easy");
-normalBtn.onclick = () => setDifficulty("normal");
-hardBtn.onclick   = () => setDifficulty("hard");
-
-/* -------------------------
-   初期化
-------------------------- */
-
-resetBoard();
-spawnPair();
-requestAnimationFrame(update);
+    window.onkeydown = e => {
+        if(!p || over) return;
+        if(e.key==="ArrowLeft" && !coll(-1,0)) p.x--;
+        if(e.key==="ArrowRight" && !coll(1,0)) p.x++;
+        if(e.key==="ArrowDown") { if(!coll(0,1)) p.y++; else lock(); }
+        if(e.key==="ArrowUp") {
+            let r = p.b.map((b,i)=>i===0?b:{ox:-b.oy, oy:b.ox, t:b.t});
+            if(!coll(0,0,r)) p.b=r;
+        }
+    };
 </script>
 </body>
 </html>
