@@ -46,7 +46,7 @@
 <div id="portal">
     <div class="win-box">
         <h1 style="margin:0;">ざこOS1.28バージョンでございま＾す！</h1>
-        <p>画面サイズ最適化済み。はみ出しすら許さないｗ</p>
+        <p>うん！ぷよぷよしよw</p>
         <button class="insult-btn" style="width:100%" onclick="startGame()">孤独に開始（笑）</button>
         <button class="insult-btn" style="width:100%; font-size:12px;" onclick="fakeMulti()">オンライン煽りマッチ</button>
     </div>
@@ -67,17 +67,17 @@
             <div id="scoreDisplay" style="font-size:32px; text-align:right;">000000</div>
         </div>
 
-        <p style="font-size:12px; font-weight:bold; margin:5px 0;">絶望ゲージ（貯まるの3倍遅いぞｗ）：</p>
+        <p style="font-size:12px; font-weight:bold; margin:5px 0;">お助けゲージ：</p>
         <div class="gauge-wrap">
             <div id="gauge-bar"></div>
         </div>
         
-        <button id="skill-btn" class="insult-btn" style="display:none; background:red;" onclick="useSkill()">★ 革命（甘え）</button>
+        <button id="skill-btn" class="insult-btn" style="display:none; background:red;" onclick="useSkill()">★ お助けボタン！</button>
 
         <div style="margin-top:20px;">
             <button class="insult-btn" style="width:100%" onclick="say('諦めたら？ｗ')">肉声で煽る</button>
-            <button class="insult-btn" style="width:100%; background: #333;" onclick="destroyPC()">🚨 PC破壊ボタン</button>
-            <button class="insult-btn" style="width:100%; background: #666;" onclick="location.reload()">逃げる（リセット）</button>
+            <button class="insult-btn" style="width:100%; background: #333;" onclick="destroyPC()">ここ押すのおすすめだよ♡</button>
+            <button class="insult-btn" style="width:100%; background: #666;" onclick="location.reload()">拗ねちゃうw</button>
         </div>
 
         <div id="log" style="font-size:10px; margin-top:auto; border:1px solid #999; padding:5px; height:80px; overflow-y:hidden; background:#fff;">
@@ -107,15 +107,15 @@
         document.getElementById("portal").style.display = "none";
         board = Array.from({length:R}, ()=>Array(C).fill(null));
         sc=0; g=0; over=false; active=true;
-        say("画面からはみ出さないようにしてやったぞ。お前のザコいプレイが全部丸見えだなｗ");
+        say("お、キタキタきたーー");
         spawn(); update();
     }
 
     function fakeMulti() {
-        say("接続中...");
+        say("接続中、ちょっと待ってろ");
         setTimeout(() => {
             alert("対戦相手 [ぷよ神] が入室しました");
-            say("あ、相手が『お前みたいなはみ出しザコとはやりたくないｗ』って言ってるぞｗ");
+            say("あ、相手が『お前みたいなはみ出しザコとはやりたくないｗ』って言ってるぞｗ笑");
             setTimeout(() => {
                 alert("対戦相手が「時間の無駄ｗ」と言って切断しました。");
                 say("はい、永遠のボッチ確定ｗ");
